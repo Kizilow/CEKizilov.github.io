@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PMS Notes — Ship Maintenance Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root,[data-theme="dark"]{
+  --bg:#0d0f14;
+  --surface:#141720;
+  --surface2:#1a1e2a;
+  --surface3:#1f2433;
+  --border:#2a2f3d;
+  --border2:#353c50;
+  --text:#e2e6f0;
+  --text-muted:#7b84a0;
+  --text-faint:#4a5168;
+  --primary:#3b8beb;
+  --primary-hover:#5a9ef0;
+  --primary-dim:#1a3a5c;
+  --done:#22c55e;
+  --done-bg:rgba(34,197,94,0.12);
+  --done-border:rgba(34,197,94,0.3);
+  --progress:#f59e0b;
+  --progress-bg:rgba(245,158,11,0.12);
+  --progress-border:rgba(245,158,11,0.3);
+  --urgent:#ef4444;
+  --urgent-bg:rgba(239,68,68,0.12);
+  --urgent-border:rgba(239,68,68,0.3);
+  --critical:#dc2626;
+  --critical-bg:rgba(220,38,38,0.18);
+  --critical-border:rgba(220,38,38,0.5);
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --radius:10px;
+  --radius-sm:6px;
+  --radius-lg:14px;
+}
+[data-theme="light"]{
+  --bg:#f0f2f7;
+  --surface:#ffffff;
+  --surface2:#f7f9fc;
+  --surface3:#edf0f7;
+  --border:#dde2ee;
+  --border2:#c8cfe0;
+  --text:#1a1f33;
+  --text-muted:#5a6282;
+  --text-faint:#9aa3bf;
+  --primary:#1d6fd1;
+  --primary-hover:#1557b0;
+  --primary-dim:#dbeafe;
+  --shadow:0 4px 24px rgba(0,0,0,0.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+
+/* ── NAV ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:16px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo svg{width:34px;height:34px;flex-shrink:0}
+.logo-text{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-top:-3px}
+.nav-spacer{flex:1}
+.nav-stats{display:flex;gap:12px;align-items:center}
+.stat-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid transparent}
+.stat-badge.done{background:var(--done-bg);border-color:var(--done-border);color:var(--done)}
+.stat-badge.progress{background:var(--progress-bg);border-color:var(--progress-border);color:var(--progress)}
+.stat-badge.urgent{background:var(--urgent-bg);border-color:var(--urgent-border);color:var(--urgent)}
+.stat-badge.critical{background:var(--critical-bg);border-color:var(--critical-border);color:var(--critical)}
+.btn-icon{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;padding:7px;display:flex;align-items:center;justify-content:center;transition:all .2s;width:34px;height:34px}
+.btn-icon:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ── TOOLBAR ── */
+.toolbar{max-width:1400px;margin:0 auto;padding:20px 24px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search-box{position:relative;flex:1;min-width:220px}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px 9px 36px;color:var(--text);font-size:13.5px;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--primary)}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-faint);pointer-events:none}
+.filter-btns{display:flex;gap:6px}
+.filter-btn{padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.filter-btn.active,.filter-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-dim)}
+.filter-btn .dot{width:7px;height:7px;border-radius:50%}
+.filter-btn .count{font-size:10px;background:var(--border2);color:var(--text-muted);border-radius:10px;padding:1px 5px;font-family:'JetBrains Mono',monospace}
+.filter-btn.active .count{background:var(--primary-dim);color:var(--primary)}
+
+.action-btns{display:flex;gap:8px;margin-left:auto}
+.btn{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;border:none;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,139,235,.35)}
+.btn-outline{background:var(--surface);border:1px solid var(--border);color:var(--text-muted)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--urgent-bg);border:1px solid var(--urgent-border);color:var(--urgent)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+
+/* ── MAIN ── */
+.main{max-width:1400px;margin:0 auto;padding:20px 24px 60px}
+
+/* ── STATS CARDS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.kpi-grid{grid-template-columns:1fr}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.kpi-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;font-weight:500}
+.kpi-value{font-size:28px;font-weight:700;margin-top:4px;font-family:'JetBrains Mono',monospace;letter-spacing:-1px}
+.kpi-sub{font-size:11px;color:var(--text-faint);margin-top:2px}
+.kpi-bar{position:absolute;bottom:0;left:0;height:3px;transition:width .4s}
+.kpi.total .kpi-value{color:var(--text)}
+.kpi.total .kpi-bar{background:var(--primary);width:100%}
+.kpi.k-done .kpi-value{color:var(--done)} .kpi.k-done .kpi-bar{background:var(--done)}
+.kpi.k-progress .kpi-value{color:var(--progress)} .kpi.k-progress .kpi-bar{background:var(--progress)}
+.kpi.k-urgent .kpi-value{color:var(--urgent)} .kpi.k-urgent .kpi-bar{background:var(--urgent)}
+.kpi.k-critical .kpi-value{color:var(--critical)} .kpi.k-critical .kpi-bar{background:var(--critical)}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.table-title{font-size:14px;font-weight:600;color:var(--text)}
+.table-meta{font-size:12px;color:var(--text-muted)}
+
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface3)}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border)}
+th.th-num{width:52px;text-align:center}
+th.th-status{width:140px}
+th.th-date{width:130px}
+th.th-actions{width:90px;text-align:center}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody tr.row-critical{background:rgba(220,38,38,0.05)}
+tbody tr.row-critical:hover{background:rgba(220,38,38,0.1)}
+td{padding:11px 16px;vertical-align:middle}
+td.td-num{text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-faint)}
+td.td-title{font-size:13.5px;font-weight:500;color:var(--text);max-width:400px}
+td.td-title .title-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
+td.td-title .notes-preview{font-size:11px;color:var(--text-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
+td.td-date{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-muted)}
+td.td-date.overdue{color:var(--urgent)}
+td.td-date.soon{color:var(--progress)}
+td.td-actions{text-align:center}
+
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.status-badge .s-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-done{background:var(--done-bg);border:1px solid var(--done-border);color:var(--done)}
+.sb-done .s-dot{background:var(--done)}
+.sb-progress{background:var(--progress-bg);border:1px solid var(--progress-border);color:var(--progress)}
+.sb-progress .s-dot{background:var(--progress)}
+.sb-urgent{background:var(--urgent-bg);border:1px solid var(--urgent-border);color:var(--urgent)}
+.sb-urgent .s-dot{background:var(--urgent)}
+.sb-critical{background:var(--critical-bg);border:1px solid var(--critical-border);color:var(--critical)}
+.sb-critical .s-dot{background:var(--critical);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.row-action{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-faint);cursor:pointer;padding:5px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;transition:all .18s;margin:0 2px}
+.row-action:hover{border-color:var(--primary);color:var(--primary)}
+.row-action.del:hover{border-color:var(--urgent);color:var(--urgent)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:580px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(-16px) scale(.97)}to{opacity:1;transform:none}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-head h2{font-size:16px;font-weight:600}
+.modal-body{padding:24px}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border)}
+
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13.5px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary)}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b84a0' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+.form-select option{background:var(--surface)}
+.form-textarea{min-height:80px;resize:vertical;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state svg{width:48px;height:48px;margin:0 auto 16px;color:var(--text-faint)}
+.empty-state h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px}
+.empty-state p{font-size:13px;max-width:300px;margin:0 auto}
+
+/* ── TOAST ── */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-size:13px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;animation:toastIn .25s ease;max-width:320px}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.toast.success{border-color:var(--done-border);background:var(--done-bg)}
+.toast.error{border-color:var(--urgent-border);background:var(--urgent-bg)}
+.toast svg{flex-shrink:0}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-faint)}
+
+@media(max-width:768px){
+  .nav-stats{display:none}
+  .filter-btns{overflow-x:auto;flex-wrap:nowrap}
+  .form-row{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  td.td-title .title-text{max-width:160px}
+  th.th-date,td.td-date{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="34" height="34" rx="8" fill="#1d6fd1"/>
+        <rect x="7" y="10" width="14" height="2.5" rx="1.25" fill="white" opacity=".9"/>
+        <rect x="7" y="15.5" width="20" height="2.5" rx="1.25" fill="white" opacity=".9"/>
+        <rect x="7" y="21" width="11" height="2.5" rx="1.25" fill="white" opacity=".7"/>
+        <circle cx="26" cy="22.5" r="4.5" fill="white" opacity=".15"/>
+        <path d="M24.5 22.5h3M26 21v3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="logo-text">PMS Notes</div>
+        <div class="logo-sub">SHIP MAINTENANCE LOG</div>
+      </div>
+    </a>
+
+    <div class="nav-spacer"></div>
+
+    <div class="nav-stats" id="navStats">
+      <span class="stat-badge done"><span>●</span><span id="navDone">0</span> Done</span>
+      <span class="stat-badge progress"><span>●</span><span id="navProgress">0</span> In Progress</span>
+      <span class="stat-badge urgent"><span>●</span><span id="navUrgent">0</span> Urgent</span>
+      <span class="stat-badge critical"><span>●</span><span id="navCritical">0</span> Critical</span>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-left:16px">
+      <button class="btn-icon" onclick="exportJSON()" title="Export JSON">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="btn-icon" onclick="document.getElementById('importInput').click()" title="Import JSON">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+      <button class="btn-icon" onclick="exportPDF()" title="Export PDF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+      </button>
+      <button class="btn-icon" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Switch theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+    <input type="file" id="importInput" accept=".json" style="display:none" onchange="importJSON(event)"/>
+  </div>
+</nav>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-box">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search tasks..." oninput="renderTable()"/>
+  </div>
+
+  <div class="filter-btns">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">
+      All <span class="count" id="countAll">0</span>
+    </button>
+    <button class="filter-btn" data-filter="DONE" onclick="setFilter('DONE',this)">
+      <span class="dot" style="background:var(--done)"></span>Done <span class="count" id="countDone">0</span>
+    </button>
+    <button class="filter-btn" data-filter="IN PROGRESS" onclick="setFilter('IN PROGRESS',this)">
+      <span class="dot" style="background:var(--progress)"></span>In Progress <span class="count" id="countProgress">0</span>
+    </button>
+    <button class="filter-btn" data-filter="URGENT" onclick="setFilter('URGENT',this)">
+      <span class="dot" style="background:var(--urgent)"></span>Urgent <span class="count" id="countUrgent">0</span>
+    </button>
+    <button class="filter-btn" data-filter="CRITICAL" onclick="setFilter('CRITICAL',this)">
+      <span class="dot" style="background:var(--critical)"></span>Critical <span class="count" id="countCritical">0</span>
+    </button>
+  </div>
+
+  <div class="action-btns">
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add Task
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KPI -->
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi total"><div class="kpi-label">Total Tasks</div><div class="kpi-value" id="kpiTotal">0</div><div class="kpi-sub">All records</div><div class="kpi-bar" style="width:100%"></div></div>
+    <div class="kpi k-done"><div class="kpi-label">Done</div><div class="kpi-value" id="kpiDone">0</div><div class="kpi-sub">Completed</div><div class="kpi-bar" id="kpiDoneBar" style="width:0%"></div></div>
+    <div class="kpi k-progress"><div class="kpi-label">In Progress</div><div class="kpi-value" id="kpiProg">0</div><div class="kpi-sub">Ongoing</div><div class="kpi-bar" id="kpiProgBar" style="width:0%"></div></div>
+    <div class="kpi k-urgent"><div class="kpi-label">Urgent</div><div class="kpi-value" id="kpiUrg">0</div><div class="kpi-sub">Needs attention</div><div class="kpi-bar" id="kpiUrgBar" style="width:0%"></div></div>
+    <div class="kpi k-critical"><div class="kpi-label">Critical</div><div class="kpi-value" id="kpiCrit">0</div><div class="kpi-sub">Immediate action</div><div class="kpi-bar" id="kpiCritBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">Maintenance Tasks</span>
+      <span class="table-meta" id="tableMeta">0 records</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-num">#</th>
+            <th>Title / Description</th>
+            <th class="th-date" onclick="sortBy('date')" style="cursor:pointer">Date ↕</th>
+            <th class="th-status">Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h4"/></svg>
+      <h3>No tasks found</h3>
+      <p>Add a new task or adjust your filters to see results.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="taskModal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add New Task</h2>
+      <button class="btn-icon" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Task Title *</label>
+        <input type="text" id="fTitle" class="form-input" placeholder="e.g. Main Engine Overhaul, Filter Replacement..."/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" id="fDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select id="fStatus" class="form-select">
+            <option value="IN PROGRESS">In Progress</option>
+            <option value="DONE">Done</option>
+            <option value="URGENT">Urgent</option>
+            <option value="CRITICAL">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes / Description</label>
+        <textarea id="fNotes" class="form-textarea" placeholder="Work performed, parts used, observations..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+let tasks = [];
+let currentFilter = 'all';
+let editIndex = -1;
+let sortAsc = true;
+
+const STATUS_MAP = {
+  'DONE': {cls:'sb-done', label:'Done'},
+  'IN PROGRESS': {cls:'sb-progress', label:'In Progress'},
+  'URGENT': {cls:'sb-urgent', label:'Urgent'},
+  'CRITICAL': {cls:'sb-critical', label:'Critical'}
+};
+
+function init(){
+  const saved = null; // no localStorage - use in-memory
+  renderTable();
+  updateKPIs();
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  return tasks.filter(t=>{
+    const matchFilter = currentFilter==='all' || t.status===currentFilter;
+    const matchSearch = !q || t.title.toLowerCase().includes(q) || (t.notes||'').toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+}
+
+function renderTable(){
+  const list = getFiltered();
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('tableMeta').textContent = `${list.length} record${list.length!==1?'s':''}`;
+
+  if(!list.length){
+    tbody.innerHTML='';
+    empty.style.display='block';
+    updateCounts();
+    return;
+  }
+  empty.style.display='none';
+
+  tbody.innerHTML = list.map((t,i)=>{
+    const globalIdx = tasks.indexOf(t);
+    const s = STATUS_MAP[t.status]||STATUS_MAP['IN PROGRESS'];
+    const isCrit = t.status==='CRITICAL';
+    const dateStr = t.date ? t.date : '—';
+    const isOverdue = t.date && t.status!=='DONE' && new Date(t.date)<new Date();
+    const isSoon = t.date && t.status!=='DONE' && !isOverdue && (new Date(t.date)-new Date())<7*86400000;
+    return `<tr class="${isCrit?'row-critical':''}" onclick="openEdit(${globalIdx})">
+      <td class="td-num">${i+1}</td>
+      <td class="td-title">
+        <span class="title-text">${escHtml(t.title)}</span>
+        ${t.notes?`<span class="notes-preview">${escHtml(t.notes)}</span>`:''}
+      </td>
+      <td class="td-date ${isOverdue?'overdue':isSoon?'soon':''}">${dateStr}</td>
+      <td><span class="status-badge ${s.cls}"><span class="s-dot"></span>${s.label}</span></td>
+      <td class="td-actions" onclick="event.stopPropagation()">
+        <button class="row-action" onclick="openEdit(${globalIdx})" title="Edit">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="row-action del" onclick="deleteTask(${globalIdx})" title="Delete">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateCounts();
+}
+
+function updateCounts(){
+  const counts = {all:tasks.length, DONE:0, 'IN PROGRESS':0, URGENT:0, CRITICAL:0};
+  tasks.forEach(t=>{ if(counts[t.status]!==undefined) counts[t.status]++; });
+  document.getElementById('countAll').textContent=counts.all;
+  document.getElementById('countDone').textContent=counts.DONE;
+  document.getElementById('countProgress').textContent=counts['IN PROGRESS'];
+  document.getElementById('countUrgent').textContent=counts.URGENT;
+  document.getElementById('countCritical').textContent=counts.CRITICAL;
+  updateKPIs(counts);
+  document.getElementById('navDone').textContent=counts.DONE;
+  document.getElementById('navProgress').textContent=counts['IN PROGRESS'];
+  document.getElementById('navUrgent').textContent=counts.URGENT;
+  document.getElementById('navCritical').textContent=counts.CRITICAL;
+}
+
+function updateKPIs(counts){
+  if(!counts){
+    counts={all:tasks.length,DONE:0,'IN PROGRESS':0,URGENT:0,CRITICAL:0};
+    tasks.forEach(t=>{if(counts[t.status]!==undefined)counts[t.status]++;});
+  }
+  const total=counts.all||1;
+  document.getElementById('kpiTotal').textContent=counts.all;
+  document.getElementById('kpiDone').textContent=counts.DONE;
+  document.getElementById('kpiProg').textContent=counts['IN PROGRESS'];
+  document.getElementById('kpiUrg').textContent=counts.URGENT;
+  document.getElementById('kpiCrit').textContent=counts.CRITICAL;
+  document.getElementById('kpiDoneBar').style.width=(counts.DONE/total*100)+'%';
+  document.getElementById('kpiProgBar').style.width=(counts['IN PROGRESS']/total*100)+'%';
+  document.getElementById('kpiUrgBar').style.width=(counts.URGENT/total*100)+'%';
+  document.getElementById('kpiCritBar').style.width=(counts.CRITICAL/total*100)+'%';
+}
+
+function setFilter(f, btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function sortBy(field){
+  if(field==='date'){
+    sortAsc=!sortAsc;
+    tasks.sort((a,b)=>{
+      if(!a.date) return 1; if(!b.date) return -1;
+      return sortAsc?(a.date>b.date?1:-1):(a.date<b.date?1:-1);
+    });
+    renderTable();
+  }
+}
+
+function openModal(idx=-1){
+  editIndex=idx;
+  document.getElementById('modalTitle').textContent = idx<0?'Add New Task':'Edit Task';
+  if(idx>=0){
+    const t=tasks[idx];
+    document.getElementById('fTitle').value=t.title||'';
+    document.getElementById('fDate').value=t.date||'';
+    document.getElementById('fStatus').value=t.status||'IN PROGRESS';
+    document.getElementById('fNotes').value=t.notes||'';
+  } else {
+    document.getElementById('fTitle').value='';
+    document.getElementById('fDate').value='';
+    document.getElementById('fStatus').value='IN PROGRESS';
+    document.getElementById('fNotes').value='';
+  }
+  document.getElementById('taskModal').classList.add('open');
+  setTimeout(()=>document.getElementById('fTitle').focus(),100);
+}
+
+function openEdit(idx){ openModal(idx); }
+function closeModal(){ document.getElementById('taskModal').classList.remove('open'); }
+function closeModalOutside(e){ if(e.target===document.getElementById('taskModal')) closeModal(); }
+
+function saveTask(){
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title){ showToast('Please enter a task title','error'); return; }
+  const task={title, date:document.getElementById('fDate').value, status:document.getElementById('fStatus').value, notes:document.getElementById('fNotes').value.trim(), id: Date.now()};
+  if(editIndex>=0){ tasks[editIndex]=task; showToast('Task updated','success'); }
+  else { tasks.push(task); showToast('Task added','success'); }
+  closeModal();
+  renderTable();
+}
+
+function deleteTask(idx){
+  if(!confirm('Delete this task?')) return;
+  tasks.splice(idx,1);
+  renderTable();
+  showToast('Task deleted');
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({version:'1.0',exported:new Date().toISOString(),tasks},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='pms-notes-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  showToast('JSON exported','success');
+}
+
+function importJSON(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      const imported=Array.isArray(data)?data:(data.tasks||[]);
+      if(!imported.length){ showToast('No tasks found in file','error'); return; }
+      tasks=imported; renderTable();
+      showToast(`Imported ${imported.length} tasks`,'success');
+    } catch(err){ showToast('Invalid JSON file','error'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function exportPDF(){
+  if(!window.jspdf){ showToast('PDF library loading...'); return; }
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+
+  doc.setFillColor(13,15,20); doc.rect(0,0,297,210,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(226,230,240);
+  doc.text('PMS NOTES — SHIP MAINTENANCE LOG',20,20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(123,132,160);
+  doc.text('Generated: '+new Date().toLocaleString(),20,27);
+  doc.text('Total: '+tasks.length+' tasks',200,27);
+
+  const rows=tasks.map((t,i)=>[
+    i+1, t.title, t.date||'—', t.status, t.notes||'—'
+  ]);
+
+  doc.autoTable({
+    startY:35,
+    head:[['#','Title','Date','Status','Notes']],
+    body:rows,
+    styles:{fontSize:9,cellPadding:4,textColor:[226,230,240],fillColor:[20,23,32],lineColor:[42,47,61],lineWidth:.2},
+    headStyles:{fillColor:[29,111,209],textColor:[255,255,255],fontStyle:'bold',fontSize:9},
+    alternateRowStyles:{fillColor:[26,30,42]},
+    columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:70},2:{cellWidth:25,halign:'center'},3:{cellWidth:28,halign:'center'},4:{cellWidth:90}},
+    didParseCell:(data)=>{
+      if(data.column.index===3 && data.section==='body'){
+        const s=data.cell.raw;
+        if(s==='DONE') data.cell.styles.textColor=[34,197,94];
+        else if(s==='IN PROGRESS') data.cell.styles.textColor=[245,158,11];
+        else if(s==='URGENT') data.cell.styles.textColor=[239,68,68];
+        else if(s==='CRITICAL'){data.cell.styles.textColor=[220,38,38];data.cell.styles.fontStyle='bold';}
+      }
+    }
+  });
+
+  // Summary
+  const finalY=doc.lastAutoTable.finalY+10;
+  const counts={DONE:0,'IN PROGRESS':0,URGENT:0,CRITICAL:0};
+  tasks.forEach(t=>{if(counts[t.status]!==undefined)counts[t.status]++;});
+  doc.setFontSize(8); doc.setTextColor(123,132,160);
+  doc.text(`DONE: ${counts.DONE}  |  IN PROGRESS: ${counts['IN PROGRESS']}  |  URGENT: ${counts.URGENT}  |  CRITICAL: ${counts.CRITICAL}`,20,finalY);
+
+  doc.save('PMS-Notes-'+new Date().toISOString().slice(0,10)+'.pdf');
+  showToast('PDF exported','success');
+}
+
+function showToast(msg,type=''){
+  const tc=document.getElementById('toastContainer');
+  const t=document.createElement('div'); t.className='toast '+(type||'');
+  const icon=type==='success'?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':
+              type==='error'?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>':
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b8beb" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  t.innerHTML=icon+msg; tc.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleTheme(){
+  const html=document.documentElement;
+  const curr=html.getAttribute('data-theme');
+  const next=curr==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  const btn=document.getElementById('themeToggle');
+  btn.innerHTML=next==='dark'?
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>':
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+}
+
+// Demo tasks
+tasks = [
+  {id:1,title:'Main Engine — Top Overhaul',date:'2026-07-20',status:'URGENT',notes:'Cylinder head #2 showing high exhaust temp. Schedule top overhaul.'},
+  {id:2,title:'Fuel Oil Separator Service',date:'2026-07-18',status:'IN PROGRESS',notes:'Bowman separator disassembled, new discs ordered. ETA 3 days.'},
+  {id:3,title:'Steering Gear Hydraulic Oil Change',date:'2026-07-10',status:'DONE',notes:'Hydraulic oil changed as per PMS schedule. All ok.'},
+  {id:4,title:'Emergency Generator Load Test',date:'2026-07-25',status:'IN PROGRESS',notes:'Weekly test scheduled. Last test passed.'},
+  {id:5,title:'Oily Water Separator — 15ppm Alarm Check',date:'2026-07-22',status:'URGENT',notes:'Alarm failed last inspection. Parts ordered from maker.'},
+  {id:6,title:'Air Compressor — Intercooler Cleaning',date:'2026-08-01',status:'IN PROGRESS',notes:''},
+  {id:7,title:'SOLAS Fire Dampers Inspection',date:'2026-07-28',status:'CRITICAL',notes:'Annual inspection overdue. Coordinate with PSC inspector.'},
+  {id:8,title:'Main Engine Turbocharger Bearing',date:'2026-07-16',status:'CRITICAL',notes:'Abnormal vibration detected. Immediate attention required!'},
+  {id:9,title:'Aux Boiler Water Test',date:'2026-07-15',status:'DONE',notes:'pH 10.5, chlorides 150ppm. Within limits.'},
+  {id:10,title:'Ballast Pumps Shaft Seal Check',date:'2026-08-05',status:'IN PROGRESS',notes:'Port side seal showing minor drip. Monitor daily.'},
+];
+
+init();
+</script>
+</body>
+</html>
