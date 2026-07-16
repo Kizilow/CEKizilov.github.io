@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chief Engineer — Marine Engineer Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root,[data-theme="light"]{
+  --bg:#f7f6f2; --surface:#f9f8f5; --surface-2:#fbfbf9;
+  --border:#d4d1ca; --divider:#dcd9d5;
+  --text:#28251d; --text-muted:#7a7974; --text-faint:#bab9b4;
+  --primary:#01696f; --primary-hover:#0c4e54; --primary-bg:#e8f2f2;
+  --blue:#006494; --blue-bg:#e0edf5;
+  --orange:#da7101; --orange-bg:#fdf0e0;
+  --green:#437a22; --green-bg:#e8f2e0;
+  --purple:#7a39bb; --purple-bg:#efe8f8;
+  --red:#a12c7b; --red-bg:#f5e8f2;
+  --teal:#01696f; --teal-bg:#e8f2f2;
+  --shadow-sm:0 1px 3px rgba(40,37,29,.07);
+  --shadow-md:0 4px 16px rgba(40,37,29,.10);
+  --shadow-lg:0 12px 40px rgba(40,37,29,.14);
+  --radius-sm:.375rem; --radius-md:.5rem; --radius-lg:.75rem; --radius-xl:1rem;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --transition:180ms cubic-bezier(.16,1,.3,1);
+}
+[data-theme="dark"]{
+  --bg:#111210; --surface:#171614; --surface-2:#1c1b19;
+  --border:#2e2d2b; --divider:#232220;
+  --text:#cccac6; --text-muted:#77756f; --text-faint:#4a4945;
+  --primary:#4f98a3; --primary-hover:#227f8b; --primary-bg:#1a2e30;
+  --blue:#5591c7; --blue-bg:#1a2535;
+  --orange:#fdab43; --orange-bg:#2e2014;
+  --green:#6daa45; --green-bg:#1c2814;
+  --purple:#a86fdf; --purple-bg:#251a35;
+  --red:#d163a7; --red-bg:#2d1a28;
+  --teal:#4f98a3; --teal-bg:#1a2e30;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+}
+
+/* ── BASE ────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;font-family:var(--font-body);font-size:16px;
+  color:var(--text);background:var(--bg);line-height:1.6}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 clamp(16px,4vw,48px);
+  display:flex;align-items:center;gap:16px;height:60px;
+  box-shadow:var(--shadow-sm);
+}
+.logo{display:flex;align-items:center;gap:10px;flex:1}
+.logo-icon{width:36px;height:36px;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.logo-sub{font-size:11px;color:var(--text-muted);font-weight:400;letter-spacing:.02em}
+.header-right{display:flex;align-items:center;gap:8px}
+.badge-rank{
+  background:var(--primary-bg);color:var(--primary);
+  border:1px solid var(--primary);
+  padding:3px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+}
+.theme-btn{
+  width:36px;height:36px;border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);transition:background var(--transition),color var(--transition);
+}
+.theme-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* ── HERO ────────────────────────────────────────────────── */
+.hero{
+  padding:clamp(40px,7vw,80px) clamp(16px,4vw,48px) clamp(32px,5vw,56px);
+  max-width:1200px;margin:0 auto;
+  display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;
+}
+@media(max-width:600px){.hero{grid-template-columns:1fr}}
+.hero-eyebrow{
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+.hero-title{
+  font-size:clamp(24px,4vw,42px);font-weight:700;line-height:1.15;
+  color:var(--text);letter-spacing:-.02em;margin-bottom:12px;
+}
+.hero-title span{color:var(--primary)}
+.hero-desc{font-size:15px;color:var(--text-muted);max-width:52ch;line-height:1.65}
+.hero-stats{
+  display:flex;gap:24px;margin-top:24px;flex-wrap:wrap;
+}
+.stat-item{text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:var(--primary);font-family:var(--font-mono)}
+.stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.hero-emblem{
+  width:120px;height:120px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary-bg) 0%,var(--blue-bg) 100%);
+  border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--primary);
+}
+@media(max-width:600px){.hero-emblem{display:none}}
+
+/* ── SECTION ─────────────────────────────────────────────── */
+.section{max-width:1200px;margin:0 auto;padding:0 clamp(16px,4vw,48px) clamp(32px,5vw,64px)}
+.section-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+  padding-bottom:12px;border-bottom:1px solid var(--divider);
+}
+.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.section-count{
+  background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;
+}
+
+/* ── GRID ─────────────────────────────────────────────────── */
+.tools-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));
+  gap:16px;
+}
+
+/* ── TOOL CARD ───────────────────────────────────────────── */
+.tool-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-xl);padding:24px;
+  display:flex;flex-direction:column;gap:16px;
+  transition:box-shadow var(--transition),border-color var(--transition),transform var(--transition);
+  cursor:pointer;
+}
+.tool-card:hover{
+  box-shadow:var(--shadow-md);border-color:var(--primary);
+  transform:translateY(-2px);
+}
+.tool-card:active{transform:translateY(0)}
+.card-top{display:flex;align-items:flex-start;gap:14px}
+.card-icon{
+  width:48px;height:48px;border-radius:var(--radius-lg);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:22px;
+}
+.card-meta{flex:1;min-width:0}
+.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;letter-spacing:-.01em}
+.card-category{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.card-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+.card-features{display:flex;flex-wrap:wrap;gap:6px}
+.feature-tag{
+  font-size:11px;color:var(--text-muted);
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:3px 8px;border-radius:999px;
+  display:flex;align-items:center;gap:4px;
+}
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:12px;border-top:1px solid var(--divider);
+  margin-top:auto;
+}
+.card-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.card-link{
+  font-size:12px;font-weight:600;color:var(--primary);
+  display:flex;align-items:center;gap:4px;
+  transition:color var(--transition);
+}
+.card-link:hover{color:var(--primary-hover)}
+
+/* ── HIGHLIGHT CARD ──────────────────────────────────────── */
+.tool-card.featured{
+  grid-column:span 2;
+  background:linear-gradient(135deg,var(--surface) 60%,var(--primary-bg) 100%);
+  border-color:var(--primary);
+  flex-direction:row;align-items:center;gap:24px;
+}
+@media(max-width:720px){.tool-card.featured{grid-column:span 1;flex-direction:column}}
+.featured .card-body{flex:1}
+.featured-badge{
+  background:var(--primary);color:#fff;
+  padding:3px 10px;border-radius:999px;
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:5px;margin-bottom:8px;
+}
+.featured .card-title{font-size:18px;margin-bottom:6px}
+.featured .card-desc{font-size:14px;max-width:55ch}
+.featured .card-icon{width:80px;height:80px;font-size:36px;border-radius:var(--radius-xl)}
+.featured-launch{
+  display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+  background:var(--primary);color:#fff;
+  padding:10px 20px;border-radius:var(--radius-lg);
+  font-size:13px;font-weight:600;
+  transition:background var(--transition),box-shadow var(--transition);
+  box-shadow:0 2px 8px rgba(1,105,111,.3);
+}
+.featured-launch:hover{background:var(--primary-hover);box-shadow:0 4px 16px rgba(1,105,111,.4)}
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+.footer{
+  border-top:1px solid var(--divider);
+  padding:24px clamp(16px,4vw,48px);
+  max-width:1200px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+}
+.footer-text{font-size:12px;color:var(--text-faint)}
+.footer-right{display:flex;align-items:center;gap:16px}
+.footer-link{font-size:12px;color:var(--text-muted);transition:color var(--transition)}
+.footer-link:hover{color:var(--text)}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:480px){
+  .hero-stats{gap:16px}
+  .stat-num{font-size:18px}
+  .badge-rank{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Chief Engineer logo">
+      <rect width="36" height="36" rx="10" fill="var(--primary-bg)"/>
+      <path d="M8 18C8 12.477 12.477 8 18 8s10 4.477 10 10-4.477 10-10 10" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M18 13v5l3 3" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="18" cy="28" r="1.5" fill="var(--primary)"/>
+      <circle cx="23" cy="26.5" r="1.5" fill="var(--primary)" opacity=".5"/>
+      <circle cx="13" cy="26.5" r="1.5" fill="var(--primary)" opacity=".5"/>
+    </svg>
+    <div>
+      <div class="logo-text">Chief Engineer</div>
+      <div class="logo-sub">Marine Engineer Toolkit</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-rank">Chief Engineer</span>
+    <button class="theme-btn" data-theme-toggle aria-label="Toggle dark mode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="hero-eyebrow">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      Professional Marine Tools
+    </div>
+    <h1 class="hero-title">Engineer's Digital<br><span>Workstation</span></h1>
+    <p class="hero-desc">A complete suite of operational tools for marine engineers. Track fuel, manage maintenance, record soundings, log contracts and more — all offline, right in your browser.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">6</div><div class="stat-lbl">Tools</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Offline</div></div>
+      <div class="stat-item"><div class="stat-num">MARPOL</div><div class="stat-lbl">Compliant</div></div>
+    </div>
+  </div>
+  <div class="hero-emblem">
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M10 48 L32 16 L54 48 Z" stroke-linejoin="round"/>
+      <path d="M20 48 L32 28 L44 48"/>
+      <line x1="32" y1="16" x2="32" y2="48"/>
+      <ellipse cx="32" cy="50" rx="22" ry="4" stroke-dasharray="4 3"/>
+    </svg>
+  </div>
+</div>
+
+<!-- TOOLS SECTION -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-title">All Tools</span>
+    <span class="section-count">6 apps</span>
+  </div>
+
+  <div class="tools-grid">
+
+    <!-- FEATURED: Daily Sounding Pro -->
+    <a href="daily-sounding-pro.html" class="tool-card featured" target="_blank" rel="noopener">
+      <div class="card-icon" style="background:var(--teal-bg);color:var(--teal)">🚢</div>
+      <div class="card-body">
+        <div class="featured-badge">★ Featured · New</div>
+        <div class="card-title">Daily Sounding Pro</div>
+        <p class="card-desc">Complete tank management system — morning soundings for all 26 tanks, transfers, evaporation cycles (BILGE→WOT), OWS overboard via 15ppm separator, port reception facility delivery, MARPOL-compliant logging. Full history, PDF reports, JSON backup.</p>
+        <span class="featured-launch">
+          Open App
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <!-- Fuel Consumption -->
+    <a href="fuel-consumption-calculator-4-3.html" class="tool-card" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div class="card-icon" style="background:var(--orange-bg);color:var(--orange)">⛽</div>
+        <div class="card-meta">
+          <div class="card-title">Fuel Consumption</div>
+          <div class="card-category" style="color:var(--orange)">Consumption · Reporting</div>
+        </div>
+      </div>
+      <p class="card-desc">Track daily fuel consumption for HFO, MDO, and LO. Calculate voyage consumption, port consumption, and generate consumption reports.</p>
+      <div class="card-features">
+        <span class="feature-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Daily logging</span>
+        <span class="feature-tag">HFO · MDO · LO</span>
+        <span class="feature-tag">PDF export</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-status"><div class="dot"></div>Active</div>
+        <div class="card-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </a>
+
+    <!-- PMS Notes -->
+    <a href="pms-notes-5.html" class="tool-card" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div class="card-icon" style="background:var(--blue-bg);color:var(--blue)">🔧</div>
+        <div class="card-meta">
+          <div class="card-title">PMS Notes</div>
+          <div class="card-category" style="color:var(--blue)">Maintenance · PMS</div>
+        </div>
+      </div>
+      <p class="card-desc">Planned Maintenance System notes and job cards. Track scheduled maintenance, record completed jobs, and manage maintenance intervals.</p>
+      <div class="card-features">
+        <span class="feature-tag">Job cards</span>
+        <span class="feature-tag">Intervals</span>
+        <span class="feature-tag">History log</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-status"><div class="dot"></div>Active</div>
+        <div class="card-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </a>
+
+    <!-- Log Book -->
+    <a href="LOG-BOOK-4.html" class="tool-card" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div class="card-icon" style="background:var(--green-bg);color:var(--green)">📖</div>
+        <div class="card-meta">
+          <div class="card-title">Engine Log Book</div>
+          <div class="card-category" style="color:var(--green)">Logging · Engine Room</div>
+        </div>
+      </div>
+      <p class="card-desc">Digital engine room log book. Record watch readings, engine parameters, alarms, and events. Compliant with standard ER log requirements.</p>
+      <div class="card-features">
+        <span class="feature-tag">Watch records</span>
+        <span class="feature-tag">Parameters</span>
+        <span class="feature-tag">Alarms log</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-status"><div class="dot"></div>Active</div>
+        <div class="card-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </a>
+
+    <!-- Contract Tracker -->
+    <a href="Contract-Tracker-Pro-5-2.html" class="tool-card" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div class="card-icon" style="background:var(--purple-bg);color:var(--purple)">📋</div>
+        <div class="card-meta">
+          <div class="card-title">Contract Tracker</div>
+          <div class="card-category" style="color:var(--purple)">HR · Contracts</div>
+        </div>
+      </div>
+      <p class="card-desc">Track employment contracts, service agreements, and crew contracts. Monitor start/end dates, extensions, and contract history.</p>
+      <div class="card-features">
+        <span class="feature-tag">Date tracking</span>
+        <span class="feature-tag">Alerts</span>
+        <span class="feature-tag">Export</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-status"><div class="dot"></div>Active</div>
+        <div class="card-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </a>
+
+    <!-- Accumulator Check -->
+    <a href="ACCOMMULATOR-CHECK-Pro.html" class="tool-card" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div class="card-icon" style="background:var(--red-bg);color:var(--red)">⚡</div>
+        <div class="card-meta">
+          <div class="card-title">Accumulator Check</div>
+          <div class="card-category" style="color:var(--red)">Safety · Hydraulics</div>
+        </div>
+      </div>
+      <p class="card-desc">Hydraulic accumulator pre-charge pressure check calculator. Verify accumulator health and record inspection results for safety compliance.</p>
+      <div class="card-features">
+        <span class="feature-tag">Pressure calc</span>
+        <span class="feature-tag">Inspection log</span>
+        <span class="feature-tag">Safety check</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-status"><div class="dot"></div>Active</div>
+        <div class="card-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer">
+    <span class="footer-text">© 2026 Chief Engineer · Marine Engineer Toolkit · All tools run locally in your browser</span>
+    <div class="footer-right">
+      <span class="footer-text" style="font-family:var(--font-mono);font-size:11px">v2.0</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Theme toggle
+(function(){
+  const t=document.querySelector('[data-theme-toggle]');
+  const r=document.documentElement;
+  let d=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  r.setAttribute('data-theme',d);
+  function updateIcon(){
+    if(!t) return;
+    t.innerHTML = d==='dark'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  }
+  updateIcon();
+  if(t) t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    r.setAttribute('data-theme',d);
+    localStorage.setItem('theme',d);
+    updateIcon();
+  });
+})();
+
+// Init Lucide icons
+lucide.createIcons();
+</script>
+</body>
+</html>
