@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contract Tracker - Multi Rank</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a, #1e293b, #4f46e5, #ec4899);
+      --card-bg: rgba(15, 23, 42, 0.96);
+      --accent: #fde047;
+      --accent-soft: rgba(253, 224, 71, 0.16);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: rgba(148, 163, 184, 0.4);
+      --input-bg: rgba(15, 23, 42, 0.98);
+      --shadow-soft: 0 22px 45px rgba(15, 23, 42, 0.95);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-image: var(--bg-gradient);
+      background-attachment: fixed;
+      background-size: 200% 200%;
+      animation: gradientShift 18s ease infinite;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 100%; }
+      100% { background-position: 0% 0%; }
+    }
+
+    .app { max-width: 1200px; width: 100%; }
+
+    .card {
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.26), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.26), transparent 60%),
+        var(--card-bg);
+      border-radius: 22px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+      padding: 22px 22px 26px;
+      backdrop-filter: blur(18px);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f9fafb;
+    }
+
+    .subtitle { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+    .badge {
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.72rem;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: radial-gradient(circle at top left, rgba(250, 250, 250, 0.1), transparent 60%),
+                  rgba(15, 23, 42, 0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .badge-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr);
+      gap: 18px;
+    }
+    @media (max-width: 1000px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+    .section-title {
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .subtext { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+
+    .panel {
+      border-radius: 18px;
+      border: 1px solid rgba(51, 65, 85, 0.95);
+      background:
+        radial-gradient(circle at top right, rgba(129, 140, 248, 0.22), transparent 60%),
+        rgba(15, 23, 42, 0.96);
+      padding: 16px 18px 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    input[type="date"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 11px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    input[type="date"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: #020617;
+    }
+
+    .hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+    .button-row {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 18px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at top left, #f97316, #fb7185);
+      color: #0f172a;
+      box-shadow: 0 12px 30px rgba(248, 113, 113, 0.5);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 40px rgba(248, 113, 113, 0.75);
+    }
+
+    .btn-secondary {
+      background: rgba(15, 23, 42, 0.96);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.65);
+    }
+    .btn-secondary:hover { background: #020617; }
+
+    .btn-icon { font-size: 1rem; }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (max-width: 900px) {
+      .summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .summary-card {
+      border-radius: 14px;
+      padding: 8px 10px;
+      background: radial-gradient(circle at top left, rgba(52, 211, 153, 0.16), transparent 60%),
+                  rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      font-size: 0.78rem;
+    }
+
+    .summary-label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .summary-value { font-size: 0.98rem; font-weight: 600; color: #fef9c3; }
+    .summary-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+    .note {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .check-row {
+      margin-top: 6px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check-row input[type="checkbox"] { width: 14px; height: 14px; }
+
+    canvas { max-width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <div class="header-row">
+        <div>
+          <h1>Contract tracker</h1>
+          <div class="subtitle">Sea contract progress &amp; earnings overview for different ranks</div>
+        </div>
+        <div>
+          <div class="badge">
+            <span class="badge-dot"></span>
+            <span id="syncBadge">Live calculation · ☁️ Connecting...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="layout">
+        <!-- LEFT -->
+        <div>
+          <div class="section-title">Contract &amp; travel</div>
+          <div class="subtext">
+            Select rank, set contract dates, today's date and travel period.
+          </div>
+
+          <div class="panel" style="margin-bottom: 12px;">
+            <div class="grid-2" style="margin-bottom: 10px;">
+              <div>
+                <label for="rank">Rank</label>
+                <select id="rank">
+                  <option value="1E">1st Engineer</option>
+                  <option value="2E">2nd Engineer</option>
+                  <option value="3E">3rd Engineer</option>
+                </select>
+                <div class="hint">Rank presets can be edited any time.</div>
+              </div>
+              <div>
+                <label for="todayDate">Today</label>
+                <input id="todayDate" type="date">
+              </div>
+              <div>
+                <label for="startDate">Beginning of contract</label>
+                <input id="startDate" type="date">
+              </div>
+              <div>
+                <label for="endDate">End of contract</label>
+                <input id="endDate" type="date">
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="travelFrom">Travel period from</label>
+                <input id="travelFrom" type="date">
+              </div>
+              <div>
+                <label for="travelTo">Travel period to</label>
+                <input id="travelTo" type="date">
+                <div class="hint">Travel = Basic / Avg days × travel days.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">Salary breakdown from contract</div>
+          <div class="subtext">
+            Enter values as in contract. Monthly base salary is calculated automatically.
+          </div>
+
+          <div class="panel">
+            <div class="grid-2">
+              <div>
+                <label for="basic">Basic</label>
+                <input id="basic" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="govertime">Guaranteed overtime</label>
+                <input id="govertime" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="leavePay">Leave pay</label>
+                <input id="leavePay" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="others">Consolidated others</label>
+                <input id="others" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="timeOwner">Time with owner</label>
+                <input id="timeOwner" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="llpMonthly">LLP (per month)</label>
+                <input id="llpMonthly" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="avgMonthDays">Average days per month</label>
+                <input id="avgMonthDays" type="number" step="0.01">
+              </div>
+              <div>
+                <label for="llpDaily">LLP daily (auto)</label>
+                <input id="llpDaily" type="number" step="0.0001" readonly>
+                <div class="hint">LLP per day = LLP month / Avg days.</div>
+              </div>
+              <div>
+                <label for="monthlySalary">Monthly base salary (auto)</label>
+                <input id="monthlySalary" type="number" step="0.01" readonly>
+                <div class="hint" id="salaryFormulaHint"></div>
+              </div>
+              <div>
+                <label for="travelRate">Travel rate per day (auto)</label>
+                <input id="travelRate" type="number" step="0.01" readonly>
+                <div class="hint">Travel rate = Basic / Avg days.</div>
+              </div>
+            </div>
+
+            <div class="check-row">
+              <input type="checkbox" id="applyLLP" checked>
+              <label for="applyLLP" style="text-transform:none; letter-spacing:0; margin-bottom:0;">
+                Apply LLP (you are returning from leave on this contract)
+              </label>
+            </div>
+
+            <div class="button-row">
+              <button type="button" class="btn-secondary" id="resetBtn">
+                <span class="btn-icon">↺</span> Reset defaults
+              </button>
+              <button type="button" class="btn-primary" id="calcBtn">
+                <span class="btn-icon">✓</span> Recalculate
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div>
+          <div class="section-title">Contract status</div>
+          <div class="subtext">
+            Days, progress and key financial figures based on your inputs.
+          </div>
+
+          <div class="panel">
+            <div class="summary-row">
+              <div class="summary-card">
+                <div class="summary-label">Contract duration</div>
+                <div class="summary-value" id="durationDays">—</div>
+                <div class="summary-sub" id="durationSub">days</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">Days passed</div>
+                <div class="summary-value" id="daysPassed">—</div>
+                <div class="summary-sub" id="daysPassedSub">fraction of contract: —</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">Days remaining</div>
+                <div class="summary-value" id="daysRemain">—</div>
+                <div class="summary-sub" id="daysRemainSub">fraction of contract: —</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">Progress</div>
+                <div class="summary-value" id="progressPercent">—</div>
+                <div class="summary-sub">% of contract completed</div>
+              </div>
+            </div>
+
+            <div class="summary-row">
+              <div class="summary-card" style="background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.16), transparent 60%), rgba(15, 23, 42, 0.98);">
+                <div class="summary-label">Earned so far (USD)</div>
+                <div class="summary-value" id="earnedNowBig">—</div>
+                <div class="summary-sub">Base salary (no LLP) + share of travel</div>
+              </div>
+              <div class="summary-card" style="background: radial-gradient(circle at top left, rgba(251, 191, 36, 0.16), transparent 60%), rgba(15, 23, 42, 0.98);">
+                <div class="summary-label">Remain to earn (USD)</div>
+                <div class="summary-value" id="remainBig">—</div>
+                <div class="summary-sub">Base salary (no LLP) for rest</div>
+              </div>
+              <div class="summary-card" style="background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 60%), rgba(15, 23, 42, 0.98);">
+                <div class="summary-label">LLP earned (if applied)</div>
+                <div class="summary-value" id="llpByDaysBig">—</div>
+                <div class="summary-sub">Days passed × LLP daily</div>
+              </div>
+              <div class="summary-card" style="background: radial-gradient(circle at top left, rgba(168, 85, 247, 0.16), transparent 60%), rgba(15, 23, 42, 0.98);">
+                <div class="summary-label">Travel allowance</div>
+                <div class="summary-value" id="travelingBig">—</div>
+                <div class="summary-sub">Basic / Avg days × travel days</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; display: flex; justify-content: center; align-items: center;">
+              <canvas id="progressChart" width="280" height="280"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        Monthly base salary (auto) = Basic + G/O + Leave Pay + Consolidated Others + Time with owner. LLP is calculated separately by days and is not included into the base salary.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rankPresets = {
+      "1E": {
+        basic: 1964,
+        govertime: 1375,
+        leavePay: 524,
+        others: 3237,
+        timeOwner: 520,
+        llpMonthly: 500,
+        avgMonthDays: 30.44
+      },
+      "2E": {
+        basic: 1800,
+        govertime: 1200,
+        leavePay: 450,
+        others: 2600,
+        timeOwner: 400,
+        llpMonthly: 400,
+        avgMonthDays: 30.44
+      },
+      "3E": {
+        basic: 1500,
+        govertime: 1000,
+        leavePay: 400,
+        others: 2200,
+        timeOwner: 300,
+        llpMonthly: 350,
+        avgMonthDays: 30.44
+      }
+    };
+
+    const STORAGE_KEY = "contractTrackerMultiRank";
+
+    // ── SUPABASE CONFIG ──
+    const SUPABASE_URL = 'https://dawmxgwnevpioklbgzhc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhd214Z3duZXZwaW9rbGJnemhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjAwNjUsImV4cCI6MjA5OTc5NjA2NX0.ZekvPEWX9_prLfuPxo_1G925rHrkteggcQVYtmu-gnc';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function setSyncBadge(status){
+      const el = document.getElementById('syncBadge');
+      if(!el) return;
+      if(status==='syncing') el.textContent = 'Live calculation · ⏳ Syncing...';
+      else if(status==='ok') el.textContent = 'Live calculation · ☁️ Synced';
+      else if(status==='error') el.textContent = 'Live calculation · ⚠️ Offline (local only)';
+    }
+
+    async function saveToSupabase(data){
+      setSyncBadge('syncing');
+      try {
+        const { error } = await sb.from('contract_tracker').upsert({
+          id: 1,
+          rank: data.rank,
+          today_date: data.todayDate || null,
+          start_date: data.startDate || null,
+          end_date: data.endDate || null,
+          travel_from: data.travelFrom,
+          travel_to: data.travelTo,
+          basic: parseFloat(data.basic)||0,
+          govertime: parseFloat(data.govertime)||0,
+          leave_pay: parseFloat(data.leavePay)||0,
+          others: parseFloat(data.others)||0,
+          time_owner: data.timeOwner,
+          llp_monthly: parseFloat(data.llpMonthly)||0,
+          avg_month_days: parseFloat(data.avgMonthDays)||0,
+          apply_llp: !!data.applyLLP,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+        if(error) throw error;
+        setSyncBadge('ok');
+      } catch(e){ console.warn('Contract tracker save error:', e); setSyncBadge('error'); }
+    }
+
+    async function loadFromSupabase(){
+      setSyncBadge('syncing');
+      try {
+        const { data, error } = await sb.from('contract_tracker').select('*').eq('id',1).maybeSingle();
+        if(error) throw error;
+        setSyncBadge('ok');
+        if(!data) return null;
+        return {
+          rank: data.rank,
+          todayDate: data.today_date,
+          startDate: data.start_date,
+          endDate: data.end_date,
+          travelFrom: data.travel_from,
+          travelTo: data.travel_to,
+          basic: data.basic,
+          govertime: data.govertime,
+          leavePay: data.leave_pay,
+          others: data.others,
+          timeOwner: data.time_owner,
+          llpMonthly: data.llp_monthly,
+          avgMonthDays: data.avg_month_days,
+          applyLLP: data.apply_llp
+        };
+      } catch(e){ console.warn('Contract tracker load error:', e); setSyncBadge('error'); return null; }
+    }
+
+    function toISO(date) {
+      if (!date) return "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function parseDateInput(value) {
+      if (!value) return null;
+      const [y, m, d] = value.split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function daysBetween(d1, d2) {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      return (d2.getTime() - d1.getTime()) / msPerDay;
+    }
+
+    function fmt(val, decimals = 2) {
+      if (!isFinite(val)) return "—";
+      return val.toFixed(decimals);
+    }
+
+    function updateAutoFromContract() {
+      const basic = parseFloat(document.getElementById("basic").value) || 0;
+      const govertime = parseFloat(document.getElementById("govertime").value) || 0;
+      const leavePay = parseFloat(document.getElementById("leavePay").value) || 0;
+      const others = parseFloat(document.getElementById("others").value) || 0;
+      const timeOwner = parseFloat(document.getElementById("timeOwner").value) || 0;
+      const llpMonthly = parseFloat(document.getElementById("llpMonthly").value) || 0;
+      const avgMonthDays = parseFloat(document.getElementById("avgMonthDays").value) || 30.44;
+
+      const monthlyBase = basic + govertime + leavePay + others + timeOwner;
+      const llpDaily = avgMonthDays > 0 ? llpMonthly / avgMonthDays : 0;
+      const travelRate = avgMonthDays > 0 ? basic / avgMonthDays : 0;
+
+      document.getElementById("monthlySalary").value = monthlyBase.toFixed(2);
+      document.getElementById("llpDaily").value = llpDaily.toFixed(4);
+      document.getElementById("travelRate").value = travelRate.toFixed(2);
+
+      const hint = document.getElementById("salaryFormulaHint");
+      hint.textContent =
+        `Monthly base salary (auto-calculated): ${monthlyBase.toFixed(2)} USD = Basic + G/O + Leave Pay + Consolidated Others + Time with owner (LLP excluded from base).`;
+    }
+
+    function recalc() {
+      updateAutoFromContract();
+
+      const startDate = parseDateInput(document.getElementById("startDate").value);
+      const endDate = parseDateInput(document.getElementById("endDate").value);
+      const todayDate = parseDateInput(document.getElementById("todayDate").value);
+      const travelFrom = parseDateInput(document.getElementById("travelFrom").value);
+      const travelTo = parseDateInput(document.getElementById("travelTo").value);
+
+      const monthlySalary = parseFloat(document.getElementById("monthlySalary").value) || 0;
+      const avgMonthDays = parseFloat(document.getElementById("avgMonthDays").value) || 30.44;
+      const llpDaily = parseFloat(document.getElementById("llpDaily").value) || 0;
+      const travelRate = parseFloat(document.getElementById("travelRate").value) || 0;
+      const applyLLP = document.getElementById("applyLLP").checked;
+
+      const durationEl = document.getElementById("durationDays");
+      const durationSubEl = document.getElementById("durationSub");
+      const daysPassedEl = document.getElementById("daysPassed");
+      const daysPassedSubEl = document.getElementById("daysPassedSub");
+      const daysRemainEl = document.getElementById("daysRemain");
+      const daysRemainSubEl = document.getElementById("daysRemainSub");
+      const progressEl = document.getElementById("progressPercent");
+
+      const earnedNowBigEl = document.getElementById("earnedNowBig");
+      const remainBigEl = document.getElementById("remainBig");
+      const llpByDaysBigEl = document.getElementById("llpByDaysBig");
+      const travelingBigEl = document.getElementById("travelingBig");
+
+      if (!startDate || !endDate || !todayDate) {
+        durationEl.textContent = "—";
+        durationSubEl.textContent = "days";
+        daysPassedEl.textContent = "—";
+        daysPassedSubEl.textContent = "fraction of contract: —";
+        daysRemainEl.textContent = "—";
+        daysRemainSubEl.textContent = "fraction of contract: —";
+        progressEl.textContent = "—";
+
+        earnedNowBigEl.textContent = "—";
+        remainBigEl.textContent = "—";
+        llpByDaysBigEl.textContent = "—";
+        travelingBigEl.textContent = "—";
+        drawChart();
+        return;
+      }
+
+      let duration = daysBetween(startDate, endDate);
+      if (duration < 0) duration = 0;
+
+      let daysPastRaw = daysBetween(startDate, todayDate);
+      if (daysPastRaw < 0) daysPastRaw = 0;
+      if (todayDate > endDate) daysPastRaw = duration;
+
+      const daysPast = duration > 0 ? Math.min(daysPastRaw, duration) : 0;
+      const daysRemain = duration > 0 ? Math.max(duration - daysPast, 0) : 0;
+
+      const daysPastFraction = duration > 0 ? (daysPast / duration) : 0;
+      const daysRemainFraction = duration > 0 ? (daysRemain / duration) : 0;
+      const progressPercent = duration > 0 ? (daysPast / duration) * 100 : 0;
+
+      durationEl.textContent = fmt(duration, 0);
+      durationSubEl.textContent = "days total";
+      daysPassedEl.textContent = fmt(daysPast, 0);
+      daysPassedSubEl.textContent = `fraction of contract: ${fmt(daysPastFraction * 100, 1)}%`;
+      daysRemainEl.textContent = fmt(daysRemain, 0);
+      daysRemainSubEl.textContent = `fraction of contract: ${fmt(daysRemainFraction * 100, 1)}%`;
+      progressEl.textContent = fmt(progressPercent, 1) + "%";
+
+      let traveling = 0;
+      if (travelFrom && travelTo) {
+        let travelDays = daysBetween(travelFrom, travelTo) + 1;
+        if (travelDays < 0) travelDays = 0;
+        traveling = travelDays * travelRate;
+      }
+
+      const monthsInContract = avgMonthDays > 0 ? (duration / avgMonthDays) : 0;
+      const baseMoneyTotal = monthlySalary * monthsInContract;
+
+      const earnedNowBase = duration > 0 ? (baseMoneyTotal * (daysPast / duration)) : 0;
+      const remainBase = baseMoneyTotal - earnedNowBase;
+
+      const travelShareNow = duration > 0 ? (traveling * (daysPast / duration)) : 0;
+      const earnedNow = earnedNowBase + travelShareNow;
+
+      const llpByDays = applyLLP ? daysPast * llpDaily : 0;
+
+      earnedNowBigEl.textContent = fmt(earnedNow);
+      remainBigEl.textContent = fmt(remainBase);
+      llpByDaysBigEl.textContent = applyLLP ? fmt(llpByDays) : "0.00";
+      travelingBigEl.textContent = fmt(traveling);
+
+      drawChart();
+    }
+
+    function loadRankPreset() {
+      const rank = document.getElementById("rank").value;
+      const preset = rankPresets[rank];
+
+      document.getElementById("basic").value = preset.basic;
+      document.getElementById("govertime").value = preset.govertime;
+      document.getElementById("leavePay").value = preset.leavePay;
+      document.getElementById("others").value = preset.others;
+      document.getElementById("timeOwner").value = preset.timeOwner;
+      document.getElementById("llpMonthly").value = preset.llpMonthly;
+      document.getElementById("avgMonthDays").value = preset.avgMonthDays;
+
+      updateAutoFromContract();
+      recalc();
+      saveToLocal();
+    }
+
+    function resetDefaults() {
+      const now = new Date();
+      const defaultStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5);
+      const defaultEnd = new Date(now.getFullYear(), now.getMonth() + 5, now.getDate());
+
+      document.getElementById("rank").value = "1E";
+      document.getElementById("todayDate").value = toISO(now);
+      document.getElementById("startDate").value = toISO(defaultStart);
+      document.getElementById("endDate").value = toISO(defaultEnd);
+      document.getElementById("travelFrom").value = toISO(defaultStart);
+      document.getElementById("travelTo").value = toISO(
+        new Date(defaultStart.getFullYear(), defaultStart.getMonth(), defaultStart.getDate() + 1)
+      );
+
+      loadRankPreset();
+      saveToLocal();
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("progressChart");
+      const ctx = canvas.getContext("2d");
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 100;
+
+      const startDate = parseDateInput(document.getElementById("startDate").value);
+      const endDate = parseDateInput(document.getElementById("endDate").value);
+      const todayDate = parseDateInput(document.getElementById("todayDate").value);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!startDate || !endDate || !todayDate) {
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "14px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("Enter dates to see progress", centerX, centerY);
+        return;
+      }
+
+      let duration = daysBetween(startDate, endDate);
+      if (duration < 0) duration = 0;
+
+      let daysPastRaw = daysBetween(startDate, todayDate);
+      if (daysPastRaw < 0) daysPastRaw = 0;
+      if (todayDate > endDate) daysPastRaw = duration;
+
+      const daysPast = duration > 0 ? Math.min(daysPastRaw, duration) : 0;
+      const daysRemain = duration > 0 ? Math.max(duration - daysPast, 0) : 0;
+
+      const passedAngle = duration > 0 ? (daysPast / duration) * 2 * Math.PI : 0;
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + passedAngle);
+      ctx.arc(centerX, centerY, radius * 0.6, -Math.PI / 2 + passedAngle, -Math.PI / 2, true);
+      ctx.closePath();
+      ctx.fillStyle = "#34d399";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2 + passedAngle, -Math.PI / 2 + 2 * Math.PI);
+      ctx.arc(centerX, centerY, radius * 0.6, -Math.PI / 2 + 2 * Math.PI, -Math.PI / 2 + passedAngle, true);
+      ctx.closePath();
+      ctx.fillStyle = "#60a5fa";
+      ctx.fill();
+
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "bold 24px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(fmt(daysPast, 0), centerX, centerY - 10);
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText("days passed", centerX, centerY + 10);
+
+      ctx.fillStyle = "#34d399";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "left";
+      ctx.fillText("● Passed: " + fmt(daysPast, 0) + " days", centerX - 120, centerY + radius + 30);
+
+      ctx.fillStyle = "#60a5fa";
+      ctx.fillText("● Remaining: " + fmt(daysRemain, 0) + " days", centerX - 120, centerY + radius + 50);
+    }
+
+    let saveDebounceTimer = null;
+    function saveToLocal() {
+      const data = {
+        rank: document.getElementById("rank").value,
+        todayDate: document.getElementById("todayDate").value,
+        startDate: document.getElementById("startDate").value,
+        endDate: document.getElementById("endDate").value,
+        travelFrom: document.getElementById("travelFrom").value,
+        travelTo: document.getElementById("travelTo").value,
+        basic: document.getElementById("basic").value,
+        govertime: document.getElementById("govertime").value,
+        leavePay: document.getElementById("leavePay").value,
+        others: document.getElementById("others").value,
+        timeOwner: document.getElementById("timeOwner").value,
+        llpMonthly: document.getElementById("llpMonthly").value,
+        avgMonthDays: document.getElementById("avgMonthDays").value,
+        applyLLP: document.getElementById("applyLLP").checked
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.warn("Cannot save contract tracker data", e);
+      }
+      if(saveDebounceTimer) clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(()=>saveToSupabase(data), 600);
+    }
+
+    function applyData(data) {
+      document.getElementById("rank").value = data.rank || "1E";
+      document.getElementById("todayDate").value = data.todayDate || "";
+      document.getElementById("startDate").value = data.startDate || "";
+      document.getElementById("endDate").value = data.endDate || "";
+      document.getElementById("travelFrom").value = data.travelFrom || "";
+      document.getElementById("travelTo").value = data.travelTo || "";
+      document.getElementById("basic").value = data.basic || "";
+      document.getElementById("govertime").value = data.govertime || "";
+      document.getElementById("leavePay").value = data.leavePay || "";
+      document.getElementById("others").value = data.others || "";
+      document.getElementById("timeOwner").value = data.timeOwner || "";
+      document.getElementById("llpMonthly").value = data.llpMonthly || "";
+      document.getElementById("avgMonthDays").value = data.avgMonthDays || "";
+      document.getElementById("applyLLP").checked = !!data.applyLLP;
+      updateAutoFromContract();
+      recalc();
+    }
+
+    function loadFromLocal() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) {
+          resetDefaults();
+          return;
+        }
+        const data = JSON.parse(saved);
+        applyData(data);
+      } catch (e) {
+        resetDefaults();
+      }
+    }
+
+    async function loadFromCloud() {
+      const cloudData = await loadFromSupabase();
+      if (cloudData) {
+        applyData(cloudData);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
+      }
+    }
+
+    window.addEventListener("load", () => {
+      document.getElementById("calcBtn").addEventListener("click", () => {
+        recalc();
+        saveToLocal();
+      });
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        resetDefaults();
+        saveToLocal();
+      });
+      document.getElementById("rank").addEventListener("change", loadRankPreset);
+      document.getElementById("applyLLP").addEventListener("change", () => {
+        recalc();
+        saveToLocal();
+      });
+
+      [
+        "startDate",
+        "endDate",
+        "todayDate",
+        "travelFrom",
+        "travelTo",
+        "basic",
+        "govertime",
+        "leavePay",
+        "others",
+        "timeOwner",
+        "llpMonthly",
+        "avgMonthDays"
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener("change", () => {
+          recalc();
+          saveToLocal();
+        });
+        el.addEventListener("input", () => {
+          recalc();
+          saveToLocal();
+        });
+      });
+
+      loadFromLocal();
+      loadFromCloud();
+    });
+  </script>
+</body>
+</html>
