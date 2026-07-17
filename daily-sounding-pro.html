@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Sounding — Tank Management Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root,[data-theme="dark"]{
+  --bg:#0d1117;--surface:#161b22;--surface-2:#21262d;--surface-3:#2d333b;
+  --border:#30363d;--border-2:#484f58;
+  --text:#e6edf3;--text-muted:#8b949e;--text-faint:#484f58;
+  --primary:#2ea043;--primary-hover:#3fb950;--primary-bg:rgba(46,160,67,0.15);
+  --blue:#388bfd;--blue-bg:rgba(56,139,253,0.15);
+  --orange:#f0883e;--orange-bg:rgba(240,136,62,0.15);
+  --red:#f85149;--red-bg:rgba(248,81,73,0.15);
+  --purple:#d2a8ff;--purple-bg:rgba(210,168,255,0.15);
+  --yellow:#e3b341;--yellow-bg:rgba(227,179,65,0.15);
+  --teal:#39c5cf;--teal-bg:rgba(57,197,207,0.15);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --shadow:0 4px 16px rgba(0,0,0,.4);
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+[data-theme="light"]{
+  --bg:#f5f7fa;--surface:#fff;--surface-2:#f0f2f5;--surface-3:#e4e7ec;
+  --border:#d1d9e0;--border-2:#b0b8c4;
+  --text:#1f2328;--text-muted:#636c76;--text-faint:#afb8c1;
+  --primary:#1a7f37;--primary-hover:#16702f;--primary-bg:rgba(26,127,55,0.1);
+  --blue:#0969da;--blue-bg:rgba(9,105,218,0.1);
+  --orange:#bc4c00;--orange-bg:rgba(188,76,0,0.1);
+  --red:#d1242f;--red-bg:rgba(209,36,47,0.1);
+  --purple:#8250df;--purple-bg:rgba(130,80,223,0.1);
+  --yellow:#9a6700;--yellow-bg:rgba(154,103,0,0.1);
+  --teal:#0e7490;--teal-bg:rgba(14,116,144,0.1);
+  --shadow:0 2px 12px rgba(0,0,0,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:none}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100dvh;font-size:14px;line-height:1.5}
+button{cursor:pointer;font:inherit;background:none;border:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+table{border-collapse:collapse;width:100%}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:16px;height:56px}
+.header-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap}
+.header-logo svg{color:var(--teal)}
+.header-nav{display:flex;gap:2px;flex:1;overflow-x:auto}
+.header-nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--text-muted);transition:all .18s;white-space:nowrap}
+.nav-btn:hover{background:var(--surface-2);color:var(--text)}
+.nav-btn.active{background:var(--primary-bg);color:var(--primary)}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all .18s;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text-muted)}
+.btn-outline:hover{border-color:var(--border-2);color:var(--text);background:var(--surface-2)}
+.btn-ghost{color:var(--text-muted)}
+.btn-ghost:hover{color:var(--text);background:var(--surface-2)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid transparent}
+.btn-danger:hover{border-color:var(--red);background:var(--red-bg)}
+.btn-blue{background:var(--blue-bg);color:var(--blue);border:1px solid transparent}
+.btn-blue:hover{border-color:var(--blue)}
+.btn-orange{background:var(--orange-bg);color:var(--orange);border:1px solid transparent}
+.btn-orange:hover{border-color:var(--orange)}
+.btn-purple{background:var(--purple-bg);color:var(--purple);border:1px solid transparent}
+.btn-purple:hover{border-color:var(--purple)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:7px;border-radius:var(--radius-sm)}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .18s}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* MAIN CONTENT */
+.main{max-width:1600px;margin:0 auto;padding:24px 20px}
+
+/* PAGE */
+.page{display:none}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-title{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
+.card-body{padding:20px}
+
+/* DATE BAR */
+.date-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.date-bar-label{font-size:13px;color:var(--text-muted);font-weight:500}
+.date-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;color:var(--text);font-size:14px;transition:border-color .18s}
+.date-input:focus{outline:none;border-color:var(--blue)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-green{background:var(--primary-bg);color:var(--primary)}
+.badge-orange{background:var(--orange-bg);color:var(--orange)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-gray{background:var(--surface-2);color:var(--text-muted)}
+.badge-purple{background:var(--purple-bg);color:var(--purple)}
+
+/* SOUNDING TABLE */
+.sounding-section{margin-bottom:24px}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;padding:0 4px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.tank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tank-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;transition:all .18s;position:relative}
+.tank-card:hover{border-color:var(--border-2)}
+.tank-card.over-80{border-color:var(--red);background:var(--red-bg)}
+.tank-card.over-60{border-color:var(--orange);background:var(--orange-bg)}
+.tank-name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px}
+.tank-capacity{font-size:10px;color:var(--text-faint);margin-bottom:8px}
+.tank-input-wrap{position:relative}
+.tank-vol-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 36px 8px 10px;color:var(--text);font-family:var(--font-mono);font-size:14px;font-weight:500;transition:all .18s}
+.tank-vol-input:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+.tank-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-faint);pointer-events:none}
+.tank-pct-bar{height:4px;background:var(--surface-3);border-radius:2px;margin-top:8px;overflow:hidden}
+.tank-pct-fill{height:100%;border-radius:2px;transition:width .3s,background .3s}
+.tank-readonly{background:var(--surface-3);color:var(--primary);font-family:var(--font-mono);font-size:15px;font-weight:700;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--primary-bg)}
+
+/* TRANSFER PANEL */
+.transfer-form{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;font-weight:500;color:var(--text-muted)}
+.form-select,.form-input{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;transition:border-color .18s;width:100%}
+.form-select:focus,.form-input:focus{outline:none;border-color:var(--blue)}
+.transfer-arrow{font-size:20px;color:var(--blue);padding-bottom:8px;text-align:center}
+.transfer-notes{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px;margin-top:0}
+.transfer-notes:focus{outline:none;border-color:var(--blue)}
+
+/* EVAPORATION PANEL */
+.evap-info-box{background:var(--purple-bg);border:1px solid var(--purple);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--purple)}
+.evap-info-box strong{display:block;margin-bottom:4px;font-size:14px}
+
+/* OPERATIONS LOG */
+.ops-log{display:flex;flex-direction:column;gap:8px}
+.op-item{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:flex-start;gap:12px}
+.op-icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.op-body{flex:1;min-width:0}
+.op-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.op-detail{font-size:12px;color:var(--text-muted)}
+.op-time{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);flex-shrink:0}
+.op-del{color:var(--text-faint);opacity:.5}
+.op-del:hover{opacity:1;color:var(--red)}
+
+/* HISTORY TABLE */
+.hist-table-wrap{overflow-x:auto}
+.hist-table{min-width:1200px}
+.hist-table th{background:var(--surface-2);padding:10px 12px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);white-space:nowrap;border-bottom:2px solid var(--border)}
+.hist-table td{padding:9px 12px;text-align:center;font-size:12px;font-family:var(--font-mono);border-bottom:1px solid var(--border);white-space:nowrap}
+.hist-table tr:hover td{background:var(--surface-2)}
+.hist-table .date-col{font-weight:600;color:var(--text);font-family:var(--font-body)}
+.hist-table .ops-col{font-family:var(--font-body);font-size:11px;color:var(--text-muted);text-align:left;max-width:220px;white-space:normal}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);font-weight:600;margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700;font-family:var(--font-mono);line-height:1.2}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:3px}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn .2s ease;max-width:340px;pointer-events:all}
+.toast.out{animation:slideOut .2s ease forwards}
+@keyframes slideIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideOut{to{transform:translateY(16px);opacity:0}}
+.toast-success{border-color:var(--primary);background:var(--primary-bg)}
+.toast-error{border-color:var(--red);background:var(--red-bg)}
+.toast-info{border-color:var(--blue);background:var(--blue-bg)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 20px;color:var(--text-faint)}
+.empty svg{margin:0 auto 12px;display:block;opacity:.4}
+.empty p{font-size:13px}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* GRID 2 */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}.transfer-form{grid-template-columns:1fr}.transfer-arrow{display:none}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-2)}
+
+/* ALERT */
+.alert{padding:12px 14px;border-radius:var(--radius-md);font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.alert-warn{background:var(--orange-bg);border:1px solid var(--orange);color:var(--orange)}
+.alert-info{background:var(--blue-bg);border:1px solid var(--blue);color:var(--blue)}
+
+/* PENDING EVAP */
+.pending-evap-item{background:var(--purple-bg);border:1px solid var(--purple);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.pending-evap-info{flex:1}
+.pending-evap-title{font-size:13px;font-weight:600;color:var(--purple);margin-bottom:2px}
+.pending-evap-detail{font-size:12px;color:var(--text-muted)}
+
+/* toggle */
+.theme-toggle{color:var(--text-muted);font-size:18px}
+.tank-prev{font-size:10px;color:var(--text-faint);font-family:var(--font-mono);margin-top:6px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 9h18v4H3zM3 15h12v4H3z"/><circle cx="19" cy="17" r="2.5"/><path d="M19 14.5v1"/></svg>
+    <span>Daily Sounding Pro</span>
+  </div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showPage('sounding')">📋 Morning Sounding</button>
+    <button class="nav-btn" onclick="showPage('transfer')">🔄 Transfer / Operations</button>
+    <button class="nav-btn" onclick="showPage('evaporation')">🔥 Evaporation</button>
+    <button class="nav-btn" onclick="showPage('history')">📅 History</button>
+    <button class="nav-btn" onclick="showPage('discharge')">🌊 OWS / Discharge</button>
+    <button class="nav-btn" onclick="showPage('report')">📄 Report</button>
+  </nav>
+  <div class="header-actions">
+    <span id="syncStatus" style="font-size:12px;padding:4px 10px;border-radius:20px;background:var(--surface-2);font-weight:500"><span style="color:var(--text-muted)">⏳ Connecting...</span></span>
+    <button class="btn btn-outline btn-sm" onclick="exportJSON()">⬇ JSON</button>
+    <button class="btn btn-outline btn-sm" onclick="importJSON()">⬆ Import</button>
+    <button class="icon-btn theme-toggle" onclick="toggleTheme()" title="Toggle theme">☀</button>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ═══════════════════════════ PAGE: MORNING SOUNDING ═══════════════════════════ -->
+<div id="page-sounding" class="page active">
+  <div class="date-bar">
+    <span class="date-bar-label">📅 Sounding Date:</span>
+    <input type="date" class="date-input" id="soundingDate">
+    <span class="status-badge badge-blue" id="soundingStatus">08:00 — Morning Round</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-primary" onclick="saveSounding()">💾 Save Sounding</button>
+    <button class="btn btn-outline btn-sm" onclick="clearSounding()">Clear</button>
+  </div>
+
+  <!-- BILGE GROUP -->
+  <div class="sounding-section">
+    <div class="section-label">⚓ Bilge & Sludge</div>
+    <div class="tank-grid" id="grid-sludge"></div>
+  </div>
+
+  <!-- TOTAL SLUDGE -->
+  <div class="sounding-section">
+    <div class="section-label">∑ Total Sludge (Auto)</div>
+    <div class="tank-grid" id="grid-totalsludge"></div>
+  </div>
+
+  <!-- DRAIN GROUP -->
+  <div class="sounding-section">
+    <div class="section-label">🚰 Drain & Overflow</div>
+    <div class="tank-grid" id="grid-drain"></div>
+  </div>
+
+  <!-- WATER GROUP -->
+  <div class="sounding-section">
+    <div class="section-label">💧 Water Tanks</div>
+    <div class="tank-grid" id="grid-water"></div>
+  </div>
+
+  <!-- CHEMICALS -->
+  <div class="sounding-section">
+    <div class="section-label">🧪 Chemicals & EGR</div>
+    <div class="tank-grid" id="grid-chem"></div>
+  </div>
+
+  <!-- LO GROUP -->
+  <div class="sounding-section">
+    <div class="section-label">🛢 Lube Oil</div>
+    <div class="tank-grid" id="grid-lo"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: TRANSFER ═══════════════════════════ -->
+<div id="page-transfer" class="page">
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">🔄 New Transfer Operation</div>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" style="margin-bottom:16px">
+            <span>ℹ</span>
+            <span>Volume will be automatically adjusted in both tanks. Current day sounding will be updated.</span>
+          </div>
+          <div class="transfer-form">
+            <div class="form-group">
+              <label class="form-label">FROM Tank</label>
+              <select class="form-select" id="tr-from"></select>
+              <small id="tr-from-level" style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono);margin-top:4px"></small>
+            </div>
+            <div class="transfer-arrow">→</div>
+            <div class="form-group">
+              <label class="form-label">TO Tank</label>
+              <select class="form-select" id="tr-to"></select>
+              <small id="tr-to-level" style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono);margin-top:4px"></small>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Volume to Transfer (m³)</label>
+            <input type="number" class="form-input" id="tr-vol" placeholder="e.g. 2.50" step="0.01" min="0">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Notes / Reason</label>
+            <textarea class="transfer-notes" id="tr-notes" placeholder="e.g. Tank nearly full, transferring to WOT1 for evaporation cycle..."></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="doTransfer()">✅ Apply Transfer</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Today's Operations Log</div>
+          <span class="status-badge badge-gray" id="ops-count-badge">0 ops</span>
+        </div>
+        <div class="card-body" id="ops-log-container">
+          <div class="empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            <p>No operations recorded today</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: EVAPORATION ═══════════════════════════ -->
+<div id="page-evaporation" class="page">
+  <div class="evap-info-box" style="margin-bottom:20px">
+    <strong>🔥 Evaporation Cycle Workflow</strong><br>
+    <span style="font-size:12px;color:var(--text-muted)">
+      Step 1 — Transfer sludge from BILGE SLUDGE → WOT 1 or WOT 2 (use Transfer / Operations tab).<br>
+      Step 2 — Come back here and press <strong>"🔥 Start Evaporation"</strong> on the WOT tank that contains sludge. This registers an active evaporation cycle.<br>
+      Step 3 — Each day update the actual volume remaining in the evaporation tank.<br>
+      Step 4 — When done, press <strong>"↩ Return Residue"</strong> — the remaining volume goes back to BILGE SLUDGE.
+    </span>
+  </div>
+
+  <div class="grid-2">
+    <!-- LEFT: WOT STATUS + START EVAP -->
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">🔥 Start Evaporation Cycle</div>
+          <span class="status-badge badge-orange">Register active evaporation</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
+            Select the WOT tank that <strong>already has sludge</strong> (transferred via Transfer tab).
+            The system will register an active cycle and track it daily.
+          </p>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Evaporation Tank</label>
+            <select class="form-select" id="ev-to-tank" onchange="updateEvapTankStatus()">
+              <option value="WOT1">WOT 1</option>
+              <option value="WOT2">WOT 2</option>
+            </select>
+          </div>
+          <div id="ev-wot-status" style="background:var(--surface-2);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;font-size:12px;font-family:var(--font-mono)">
+            Select tank to see current volume
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Notes for Chief Engineer</label>
+            <textarea class="transfer-notes" id="ev-notes" placeholder="e.g. Evaporation started after transfer from BILGE SLUDGE..."></textarea>
+          </div>
+          <button class="btn btn-orange" style="width:100%;justify-content:center" onclick="startEvaporation()">🔥 Start Evaporation Cycle</button>
+        </div>
+      </div>
+
+      <!-- ACTIVE CYCLES: update daily volume + return -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⏳ Active Evaporation Cycles</div>
+          <span class="status-badge badge-purple">Update daily / Return when done</span>
+        </div>
+        <div class="card-body">
+          <div id="pending-evap-list">
+            <div class="empty"><p>No active evaporation cycles</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: LOG -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Evaporation Log</div>
+        </div>
+        <div class="card-body" id="evap-log-container">
+          <div class="empty"><p>No evaporation operations recorded</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: HISTORY ═══════════════════════════ -->
+<div id="page-history" class="page">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <span class="date-bar-label">📅 Filter:</span>
+    <input type="month" class="date-input" id="histMonth">
+    <button class="btn btn-outline btn-sm" onclick="renderHistory()">🔍 Load</button>
+    <span style="flex:1"></span>
+    <button class="btn btn-outline btn-sm" onclick="exportHistoryCSV()">📊 Export CSV</button>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📅 Monthly Sounding History</div>
+      <span class="status-badge badge-gray" id="hist-count">0 records</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="hist-table-wrap">
+        <table class="hist-table" id="hist-table">
+          <thead id="hist-thead"></thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:20px" class="card">
+    <div class="card-header"><div class="card-title">📋 Operations History</div></div>
+    <div class="card-body" id="hist-ops-container"><div class="empty"><p>Select month and click Load</p></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: REPORT ═══════════════════════════ -->
+<div id="page-report" class="page">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <select class="form-select" id="rptMode" style="width:220px" onchange="toggleRptMode()">
+      <option value="single">📅 Single Day Report</option>
+      <option value="all">📊 All Days — Tank Dynamics</option>
+    </select>
+    <input type="date" class="date-input" id="rptDate">
+    <button class="btn btn-primary" onclick="generateReport()">📄 Generate</button>
+    <button class="btn btn-outline btn-sm" onclick="printReport()">🖨 Print / PDF</button>
+    <span style="font-size:12px;color:var(--text-muted)" id="rpt-hint">Single day sounding report</span>
+  </div>
+  <div id="report-content"></div>
+</div>
+
+
+<!-- ═══════════════════════════ PAGE: OWS / DISCHARGE ═══════════════════════════ -->
+<div id="page-discharge" class="page">
+  <div class="grid-2">
+    <!-- OWS OVERBOARD -->
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">🌊 OWS — Overboard Discharge</div>
+          <span class="status-badge badge-blue">BILGE → Overboard via OWS</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" style="margin-bottom:16px">
+            <span>ℹ</span>
+            <div>
+              <strong>MARPOL Reg. 14/15 — OWS Operation</strong><br>
+              Discharge only when underway, &gt;12 nautical miles from shore.<br>
+              Oil content must be &lt;15 ppm. ORB Part I entry required.
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Volume discharged overboard via OWS (m³)</label>
+            <input type="number" class="form-input" id="ows-vol" placeholder="e.g. 3.50" step="0.01" min="0">
+            <small id="ows-bilge-level" style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono);margin-top:4px;display:block"></small>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Position at start of discharge</label>
+            <input type="text" class="form-input" id="ows-pos-start" placeholder="e.g. 51°30'N 001°20'W">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Position at end of discharge</label>
+            <input type="text" class="form-input" id="ows-pos-end" placeholder="e.g. 51°35'N 001°15'W">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Ship speed (knots) during discharge</label>
+            <input type="number" class="form-input" id="ows-speed" placeholder="e.g. 12.5" step="0.1" min="0">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Notes / ORB reference</label>
+            <textarea class="transfer-notes" id="ows-notes" placeholder="e.g. Oil content &lt;15ppm confirmed, ORB entry Code 11.1..."></textarea>
+          </div>
+          <button class="btn btn-blue" style="width:100%;justify-content:center" onclick="doOWS()">🌊 Record OWS Discharge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PORT RECEPTION / BARGE -->
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">🚢 Port Reception — Sludge Delivery</div>
+          <span class="status-badge badge-orange">BILGE SLUDGE → Barge / Truck</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warn" style="margin-bottom:16px">
+            <span>⚠</span>
+            <div>
+              <strong>MARPOL Annex I — Port Reception Facility</strong><br>
+              Document delivery with PRF receipt. Record in ORB Part I (Code C/D).
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Volume of sludge delivered (m³)</label>
+            <input type="number" class="form-input" id="prf-vol" placeholder="e.g. 5.00" step="0.01" min="0">
+            <small id="prf-sludge-level" style="color:var(--text-muted);font-size:11px;font-family:var(--font-mono);margin-top:4px;display:block"></small>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Port / Location</label>
+            <input type="text" class="form-input" id="prf-port" placeholder="e.g. Rotterdam, Netherlands">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Reception method</label>
+            <select class="form-select" id="prf-method">
+              <option value="Barge">Barge (Reception Barge)</option>
+              <option value="Truck">Truck (Shore Truck)</option>
+              <option value="Pipeline">Pipeline (Shore Connection)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Contractor / Company name</label>
+            <input type="text" class="form-input" id="prf-contractor" placeholder="e.g. CleanSeas Ltd.">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">PRF Receipt number</label>
+            <input type="text" class="form-input" id="prf-receipt" placeholder="e.g. NL-RTM-2024-00123">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Notes</label>
+            <textarea class="transfer-notes" id="prf-notes" placeholder="e.g. Delivery completed, signed receipt on board..."></textarea>
+          </div>
+          <button class="btn btn-orange" style="width:100%;justify-content:center" onclick="doPRF()">🚢 Record Port Delivery</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCHARGE LOG -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 Discharge & Delivery Log</div>
+      <span class="status-badge badge-gray" id="discharge-count-badge">0 records</span>
+    </div>
+    <div class="card-body" id="discharge-log-container">
+      <div class="empty">
+        <p>No discharge or delivery operations recorded</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- RETURN RESIDUE MODAL -->
+<div class="modal-overlay" id="returnModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">↩ Return Residue to BILGE SLUDGE</div>
+      <button class="btn-ghost btn-icon" onclick="closeModal('returnModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Evaporation Tank</label>
+        <input class="form-input" id="ret-tank-name" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Original volume sent (m³)</label>
+        <input class="form-input" id="ret-orig-vol" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Remaining residue to return (m³)</label>
+        <input type="number" class="form-input" id="ret-vol" placeholder="Volume after evaporation" step="0.01" min="0">
+        <small style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block">Enter actual remaining volume — evaporated portion will be calculated automatically.</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="transfer-notes" id="ret-notes" placeholder="e.g. Evaporation complete, returning residue..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('returnModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReturn()">↩ Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT OPERATION MODAL -->
+<div class="modal-overlay" id="editOpModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏ Edit Record</div>
+      <button class="btn-ghost btn-icon" onclick="closeModal('editOpModal')">✕</button>
+    </div>
+    <div class="modal-body" id="editOpBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editOpModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditOp()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="json-import-input" accept=".json" style="display:none" onchange="handleJSONImport(event)">
+
+<script>
+// ═══════════════════════════════════════════
+// DATA STRUCTURE
+// ═══════════════════════════════════════════
+
+const TANKS = [
+  {g:'sludge', k:'BILGE',      l:'BILGE',          cap:71.46},
+  {g:'sludge', k:'BILGE_PRIM', l:'BILGE PRIM',      cap:3.23},
+  {g:'sludge', k:'BILGE_SLG',  l:'BILGE SLUDGE',   cap:117.66, sludge:true, canEvap:true},
+  {g:'sludge', k:'FO_SLG',     l:'FO SLUDGE',      cap:2.88,   sludge:true},
+  {g:'sludge', k:'LO_SLG',     l:'LO SLUDGE',      cap:2.88,   sludge:true},
+  {g:'sludge', k:'WOT1',       l:'WOT 1',          cap:5.53,   sludge:true, evapDest:true},
+  {g:'sludge', k:'WOT2',       l:'WOT 2',          cap:5.44,   sludge:true, evapDest:true},
+  {g:'sludge', k:'STUFF_BOX',  l:'STUFF BOX DRAIN',cap:1.15,   sludge:true},
+  {g:'sludge', k:'SCAV_BOX',   l:'SCAV BOX DRAIN', cap:1.41,   sludge:true},
+  {g:'totalsludge', k:'TOTAL_SLG', l:'TOTAL SLUDGE', cap:141.94, readonly:true},
+  {g:'drain',  k:'FO_DRAIN',   l:'FO DRAIN',        cap:4.99},
+  {g:'drain',  k:'FO_OVRFL',   l:'FO OVERFLOW',     cap:81.31},
+  {g:'drain',  k:'BILGE_HOLD', l:'BILGE HOLD',      cap:128.16},
+  {g:'drain',  k:'GRAY_WATER', l:'GRAY WATER',      cap:52.14},
+  {g:'water',  k:'UREA_STOR',  l:'UREA STOR',       cap:52.95},
+  {g:'water',  k:'CLEAN_DRN',  l:'CLEAN DRAIN',     cap:71.46},
+  {g:'chem',   k:'EGR_DRAIN',  l:'EGR DRAIN',       cap:102.80},
+  {g:'chem',   k:'EGR_DIRTY',  l:'EGR DIRTY',       cap:4.92},
+  {g:'chem',   k:'NAOH_STOR',  l:'NaOH STOR',       cap:18.09},
+  {g:'water',  k:'FW_P',       l:'FW P',            cap:181},
+  {g:'water',  k:'FW_S',       l:'FW S',            cap:130},
+  {g:'water',  k:'DW',         l:'DW',              cap:50},
+  {g:'lo',     k:'ME_LO_SUMP', l:'ME LO SUMP',      cap:46.54},
+  {g:'lo',     k:'ST_LO_COLL', l:'ST LO COLL',      cap:7.47},
+  {g:'lo',     k:'GE_LO_OVRFL',l:'GE LO OVRFL',    cap:5.50},
+  {g:'lo',     k:'ST_LO',      l:'ST LO',           cap:0.20},
+];
+
+// Extra virtual "tank" used only as a FROM source for transfers (feeds into BILGE)
+const BILGE_WELL = {g:'sludge', k:'BILGE_WELL', l:'BILGE WELL', cap:10, virtualSource:true};
+
+const SLUDGE_KEYS = ['BILGE_SLG','FO_SLG','LO_SLG','WOT1','WOT2','STUFF_BOX','SCAV_BOX'];
+
+// ═══════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://dawmxgwnevpioklbgzhc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhd214Z3duZXZwaW9rbGJnemhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjAwNjUsImV4cCI6MjA5OTc5NjA2NX0.ZekvPEWX9_prLfuPxo_1G925rHrkteggcQVYtmu-gnc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let DB = { soundings:{}, operations:[], evapCycles:[] };
+
+function initDB(){ return { soundings:{}, operations:[], evapCycles:[] }; }
+
+function setSyncStatus(status){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  if(status==='syncing'){ el.innerHTML='<span style="color:var(--yellow)">⏳ Syncing...</span>'; }
+  else if(status==='ok'){ el.innerHTML='<span style="color:var(--primary)">☁️ Synced</span>'; }
+  else if(status==='error'){ el.innerHTML='<span style="color:var(--red)">⚠️ Offline (local only)</span>'; }
+  else if(status==='offline'){ el.innerHTML='<span style="color:var(--text-muted)">📴 Offline</span>'; }
+}
+
+// ── LOAD from Supabase for a given date (also loads previous day for "yesterday" display) ──
+async function loadDateFromSupabase(date){
+  setSyncStatus('syncing');
+  try {
+    const prevDate = shiftDate(date,-1);
+    const { data: rows, error } = await sb.from('soundings').select('*').in('date',[date,prevDate]);
+    if(error) throw error;
+    if(rows){
+      rows.forEach(r=>{
+        if(!DB.soundings[r.date]) DB.soundings[r.date] = {};
+        DB.soundings[r.date][r.tank_name] = r.volume;
+      });
+    }
+    const { data: ops, error: opsErr } = await sb.from('operations').select('*').eq('date', date).order('created_at', {ascending:true});
+    if(opsErr) throw opsErr;
+    if(ops){
+      DB.operations = DB.operations.filter(o=>o.date!==date);
+      ops.forEach(op => {
+        DB.operations.push(normalizeOpFromDb(op));
+      });
+    }
+    const { data: evaps, error: evapErr } = await sb.from('evaporation_cycles').select('*').in('status',['pending','completed']);
+    if(!evapErr && evaps){
+      DB.evapCycles = evaps.map(e=>({
+        id: e.id,
+        startDate: e.start_date,
+        startTime: e.start_time||'',
+        toTank: e.tank_name,
+        vol: parseFloat(e.start_volume)||0,
+        status: e.status,
+        notes: e.notes||'',
+        dailyUpdates: e.daily_updates ? JSON.parse(e.daily_updates) : [],
+        returnDate: e.return_date||null,
+        returnVol: e.return_volume!=null?parseFloat(e.return_volume):null,
+        evaporated: e.evaporated!=null?parseFloat(e.evaporated):null
+      }));
+    }
+    setSyncStatus('ok');
+    saveDB();
+  } catch(e){
+    console.warn('Supabase load error:', e);
+    setSyncStatus('error');
+    try{ const c = JSON.parse(localStorage.getItem('dsProDB')); if(c) Object.assign(DB,c); }catch(x){}
+  }
+}
+
+function normalizeOpFromDb(op){
+  let extra = {};
+  try{ if(op.notes && op.notes.startsWith('{')) extra = JSON.parse(op.notes); }catch(e){}
+  return {
+    id: op.id,
+    type: op.type,
+    date: op.date,
+    time: op.time,
+    from: op.from_tank,
+    to: op.to_tank,
+    vol: parseFloat(op.volume)||0,
+    notes: extra.notes!==undefined ? extra.notes : (op.notes||''),
+    ...extra
+  };
+}
+
+async function loadAllOperationsFromSupabase(){
+  try{
+    const { data: ops, error } = await sb.from('operations').select('*').order('created_at',{ascending:true});
+    if(error) throw error;
+    if(ops) DB.operations = ops.map(normalizeOpFromDb);
+  }catch(e){ console.warn('Load all ops error', e); }
+}
+
+// ── SAVE all soundings for a date to Supabase ──
+async function saveAllSoundingsToSupabase(date){
+  setSyncStatus('syncing');
+  const vols = DB.soundings[date]||{};
+  const upserts = Object.entries(vols).map(([tankKey, volume]) => ({
+    date: date,
+    tank_name: tankKey,
+    volume: parseFloat(volume)||0,
+    capacity: (TANKS.find(t=>t.k===tankKey)||{}).cap||0,
+    percentage: (parseFloat(volume)||0) / ((TANKS.find(t=>t.k===tankKey)||{}).cap||1) * 100
+  }));
+  if(upserts.length === 0){ setSyncStatus('ok'); return true; }
+  try {
+    const { error } = await sb.from('soundings').upsert(upserts, { onConflict: 'date,tank_name' });
+    if(error) throw error;
+    setSyncStatus('ok');
+    saveDB();
+    return true;
+  } catch(e){
+    console.warn('Supabase save all error:', e);
+    setSyncStatus('error');
+    saveDB();
+    return false;
+  }
+}
+
+// ── SAVE operation to Supabase — stores extra fields (position, port, etc) as JSON in notes ──
+async function saveOperationToSupabase(op){
+  try {
+    const extra = {...op};
+    delete extra.id; delete extra.type; delete extra.date; delete extra.time;
+    delete extra.from; delete extra.to; delete extra.vol;
+    const payload = {
+      date: op.date,
+      time: op.time,
+      type: op.type,
+      from_tank: op.from||null,
+      to_tank: op.to||null,
+      volume: op.vol||0,
+      notes: JSON.stringify(extra)
+    };
+    if(op._dbId){
+      const { error } = await sb.from('operations').update(payload).eq('id', op._dbId);
+      if(error) console.warn('Update op error:', error);
+    } else {
+      const { data, error } = await sb.from('operations').insert(payload).select().single();
+      if(error) console.warn('Save op error:', error);
+      else if(data){ op.id = data.id; op._dbId = data.id; }
+    }
+  } catch(e){ console.warn('Save op exception:', e); }
+}
+
+async function deleteOperationFromSupabase(opId){
+  try {
+    const { error } = await sb.from('operations').delete().eq('id', opId);
+    if(error) console.warn('Delete op error:', error);
+  } catch(e){ console.warn('Delete op exception:', e); }
+}
+
+// ── SAVE evap cycle to Supabase ──
+async function saveEvapCycleToSupabase(cycle){
+  try {
+    const payload = {
+      tank_name: cycle.toTank,
+      start_date: cycle.startDate,
+      start_time: cycle.startTime||null,
+      start_volume: cycle.vol,
+      status: cycle.status,
+      notes: cycle.notes||null,
+      daily_updates: JSON.stringify(cycle.dailyUpdates||[]),
+      return_date: cycle.returnDate||null,
+      return_volume: cycle.returnVol!=null?cycle.returnVol:null,
+      evaporated: cycle.evaporated!=null?cycle.evaporated:null
+    };
+    if(cycle._dbId){
+      const { error } = await sb.from('evaporation_cycles').update(payload).eq('id', cycle._dbId);
+      if(error) console.warn('Evap cycle update error:', error);
+    } else {
+      const { data, error } = await sb.from('evaporation_cycles').insert(payload).select().single();
+      if(error) console.warn('Evap cycle insert error:', error);
+      else if(data){ cycle.id = data.id; cycle._dbId = data.id; }
+    }
+  } catch(e){ console.warn('Save evap exception:', e); }
+}
+
+async function deleteEvapCycleFromSupabase(id){
+  try{ const { error } = await sb.from('evaporation_cycles').delete().eq('id', id); if(error) console.warn(error); }catch(e){console.warn(e);}
+}
+
+function saveDB(){
+  try{ localStorage.setItem('dsProDB', JSON.stringify(DB)); }catch(e){}
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function shiftDate(dateStr, days){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+function getTankVol(date, key){ return DB.soundings[date]?.[key] ?? null; }
+function getCurrentVols(date){ if(!DB.soundings[date]) DB.soundings[date] = {}; return DB.soundings[date]; }
+
+// ═══════════════════════════════════════════
+// BUILD TANK GRIDS
+// ═══════════════════════════════════════════
+
+function buildGrids(){
+  const groups = {sludge:[], totalsludge:[], drain:[], water:[], chem:[], lo:[]};
+  TANKS.forEach(t => { if(groups[t.g]) groups[t.g].push(t); });
+  renderGrid('grid-sludge', groups.sludge);
+  renderGrid('grid-totalsludge', groups.totalsludge);
+  renderGrid('grid-drain', groups.drain);
+  renderGrid('grid-water', groups.water);
+  renderGrid('grid-chem', groups.chem);
+  renderGrid('grid-lo', groups.lo);
+}
+
+function renderGrid(containerId, tanks){
+  const el = document.getElementById(containerId);
+  el.innerHTML = tanks.map(t => tankCardHTML(t)).join('');
+}
+
+function tankCardHTML(t){
+  if(t.readonly){
+    return `<div class="tank-card" id="card-${t.k}" style="border-color:var(--primary);background:var(--primary-bg)">
+      <div class="tank-name" style="color:var(--primary)">${t.l}</div>
+      <div class="tank-capacity">Capacity: ${t.cap} m³</div>
+      <div class="tank-readonly" id="val-${t.k}">— m³</div>
+      <div class="tank-pct-bar"><div class="tank-pct-fill" id="pct-${t.k}" style="width:0%;background:var(--primary)"></div></div>
+    </div>`;
+  }
+  return `<div class="tank-card" id="card-${t.k}">
+    <div class="tank-name">${t.l}</div>
+    <div class="tank-capacity">Cap: ${t.cap} m³${t.canEvap?' • 🔥 Evap source':''}</div>
+    <div class="tank-input-wrap">
+      <input type="number" class="tank-vol-input" id="inp-${t.k}"
+        placeholder="0.00" step="0.01" min="0" max="${t.cap}"
+        oninput="onTankInput('${t.k}',this.value)">
+      <span class="tank-unit">m³</span>
+    </div>
+    <div class="tank-pct-bar"><div class="tank-pct-fill" id="pct-${t.k}" style="width:0%;background:var(--primary)"></div></div>
+    <div class="tank-prev" id="prev-${t.k}">Yesterday: —</div>
+  </div>`;
+}
+
+function onTankInput(key, val){
+  const date = document.getElementById('soundingDate').value;
+  if(!date) return;
+  if(!DB.soundings[date]) DB.soundings[date] = {};
+  DB.soundings[date][key] = parseFloat(val)||0;
+  updateTankUI(key, parseFloat(val)||0);
+  updateTotalSludge(date);
+}
+
+function updateTankUI(key, val){
+  const tank = TANKS.find(t=>t.k===key);
+  if(!tank) return;
+  const pctEl = document.getElementById('pct-'+key);
+  const cardEl = document.getElementById('card-'+key);
+  if(!pctEl || !cardEl) return;
+  const pct = tank.cap > 0 ? Math.min(100,(val/tank.cap)*100) : 0;
+  pctEl.style.width = pct+'%';
+  if(pct>=80){ pctEl.style.background='var(--red)'; cardEl.className='tank-card over-80'; }
+  else if(pct>=60){ pctEl.style.background='var(--orange)'; cardEl.className='tank-card over-60'; }
+  else if(pct>=40){ pctEl.style.background='var(--yellow)'; cardEl.className='tank-card'; }
+  else { pctEl.style.background='var(--primary)'; cardEl.className='tank-card'; }
+}
+
+function updateTotalSludge(date){
+  const vols = DB.soundings[date] || {};
+  const total = SLUDGE_KEYS.reduce((s,k)=>s+(vols[k]||0), 0);
+  if(!DB.soundings[date]) DB.soundings[date] = {};
+  DB.soundings[date]['TOTAL_SLG'] = parseFloat(total.toFixed(3));
+  const el = document.getElementById('val-TOTAL_SLG');
+  if(el) el.textContent = total.toFixed(3)+' m³';
+  const tank = TANKS.find(t=>t.k==='TOTAL_SLG');
+  const pct = tank ? Math.min(100,(total/tank.cap)*100) : 0;
+  const pctEl = document.getElementById('pct-TOTAL_SLG');
+  if(pctEl){ pctEl.style.width=pct+'%'; pctEl.style.background = pct>80?'var(--red)':pct>60?'var(--orange)':'var(--primary)'; }
+}
+
+// Show current values AND yesterday's values for reference
+function loadSoundingToUI(date){
+  const vols = DB.soundings[date] || {};
+  const prevDate = shiftDate(date,-1);
+  const prevVols = DB.soundings[prevDate] || {};
+  TANKS.forEach(t => {
+    if(t.readonly) return;
+    const inp = document.getElementById('inp-'+t.k);
+    if(!inp) return;
+    const v = vols[t.k];
+    inp.value = (v !== undefined && v !== null) ? v : '';
+    updateTankUI(t.k, v||0);
+    const prevEl = document.getElementById('prev-'+t.k);
+    if(prevEl){
+      const pv = prevVols[t.k];
+      prevEl.textContent = (pv !== undefined && pv !== null) ? `Yesterday (${prevDate}): ${pv.toFixed(3)} m³` : `Yesterday (${prevDate}): —`;
+    }
+  });
+  updateTotalSludge(date);
+}
+
+async function saveSounding(){
+  const date = document.getElementById('soundingDate').value;
+  if(!date){ showToast('Please select a date','error'); return; }
+  if(!DB.soundings[date]) DB.soundings[date] = {};
+  TANKS.forEach(t => {
+    if(t.readonly) return;
+    const inp = document.getElementById('inp-'+t.k);
+    if(inp) DB.soundings[date][t.k] = parseFloat(inp.value)||0;
+  });
+  updateTotalSludge(date);
+  saveDB();
+  document.getElementById('soundingStatus').textContent = '⏳ Saving...';
+  document.getElementById('soundingStatus').className='status-badge badge-orange';
+  const ok = await saveAllSoundingsToSupabase(date);
+  if(ok){
+    showToast('✅ Sounding saved & synced to cloud for '+date,'success');
+    document.getElementById('soundingStatus').textContent = '☁️ Saved & Synced';
+    document.getElementById('soundingStatus').className='status-badge badge-green';
+  } else {
+    showToast('⚠️ Saved locally (cloud sync failed)','info');
+    document.getElementById('soundingStatus').textContent = '💾 Saved locally';
+    document.getElementById('soundingStatus').className='status-badge badge-orange';
+  }
+}
+
+function clearSounding(){
+  const date = document.getElementById('soundingDate').value;
+  if(!date) return;
+  TANKS.forEach(t => {
+    const inp = document.getElementById('inp-'+t.k);
+    if(inp){ inp.value=''; updateTankUI(t.k,0); }
+  });
+  const el = document.getElementById('val-TOTAL_SLG');
+  if(el) el.textContent = '0.000 m³';
+  showToast('Cleared — not saved','info');
+}
+
+// ═══════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════
+
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  downloadBlob(blob, `daily-sounding-${todayStr()}.json`);
+  showToast('✅ JSON exported','success');
+}
+
+function importJSON(){ document.getElementById('json-import-input').click(); }
+
+function handleJSONImport(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!data.soundings||!data.operations) throw new Error('Invalid format');
+      if(confirm(`Import data from ${file.name}?\nThis will MERGE with existing data (new records added, existing preserved).`)){
+        Object.keys(data.soundings).forEach(d=>{
+          if(!DB.soundings[d]) DB.soundings[d]=data.soundings[d];
+        });
+        data.operations.forEach(op=>{
+          if(!DB.operations.find(o=>o.id===op.id)) DB.operations.push(op);
+        });
+        if(data.evapCycles) data.evapCycles.forEach(c=>{
+          if(!DB.evapCycles.find(x=>x.id===c.id)) DB.evapCycles.push(c);
+        });
+        saveDB();
+        const date = document.getElementById('soundingDate').value;
+        if(date) loadSoundingToUI(date);
+        showToast('✅ Data imported successfully','success');
+      }
+    } catch(err){ showToast('Error: '+err.message,'error'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function downloadBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+}
+
+// ═══════════════════════════════════════════
+// TRANSFER OPERATIONS
+// ═══════════════════════════════════════════
+
+function buildTransferSelects(){
+  const fromOpts = TANKS.filter(t=>!t.readonly).map(t=>`<option value="${t.k}">${t.l} (${t.cap} m³)</option>`).join('')
+    + `<option value="BILGE_WELL">BILGE WELL (${BILGE_WELL.cap} m³)</option>`;
+  const toOpts = TANKS.filter(t=>!t.readonly).map(t=>`<option value="${t.k}">${t.l} (${t.cap} m³)</option>`).join('');
+  document.getElementById('tr-from').innerHTML = fromOpts;
+  document.getElementById('tr-to').innerHTML = toOpts;
+  document.getElementById('tr-from').addEventListener('change', updateTrLevels);
+  document.getElementById('tr-to').addEventListener('change', updateTrLevels);
+  updateTrLevels();
+}
+
+function getTankDef(key){
+  if(key==='BILGE_WELL') return BILGE_WELL;
+  return TANKS.find(t=>t.k===key);
+}
+
+function updateTrLevels(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const vols = DB.soundings[date]||{};
+  const fk = document.getElementById('tr-from').value;
+  const tk = document.getElementById('tr-to').value;
+  const ft = getTankDef(fk);
+  const tt = getTankDef(tk);
+  document.getElementById('tr-from-level').textContent = ft ? (ft.virtualSource ? 'BILGE WELL — volume not tracked by sounding (assumed available)' : `Current: ${(vols[fk]||0).toFixed(3)} m³ / ${ft.cap} m³`) : '';
+  document.getElementById('tr-to-level').textContent = tt ? `Current: ${(vols[tk]||0).toFixed(3)} m³ / ${tt.cap} m³` : '';
+  const bv = vols['BILGE_SLG']||0;
+  const bEl = document.getElementById('ev-bilge-level');
+  if(bEl) bEl.textContent = `BILGE SLUDGE current: ${bv.toFixed(3)} m³ / 117.66 m³`;
+}
+
+function doTransfer(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const fk = document.getElementById('tr-from').value;
+  const tk = document.getElementById('tr-to').value;
+  const vol = parseFloat(document.getElementById('tr-vol').value)||0;
+  const notes = document.getElementById('tr-notes').value.trim();
+  if(fk===tk){ showToast('FROM and TO tanks must be different','error'); return; }
+  if(vol<=0){ showToast('Enter valid volume','error'); return; }
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  const fromTank = getTankDef(fk);
+  const toTank = getTankDef(tk);
+  const isVirtualFrom = !!fromTank.virtualSource;
+  const fromCur = isVirtualFrom ? null : (vols[fk]||0);
+  if(!isVirtualFrom && vol>fromCur){ showToast(`Not enough volume in ${fromTank.l} (current: ${fromCur.toFixed(3)} m³)`,'error'); return; }
+  const toCur = vols[tk]||0;
+  const toNew = toCur+vol;
+  if(toNew>toTank.cap){ showToast(`Volume would exceed capacity of ${toTank.l} (cap: ${toTank.cap} m³)`,'error'); return; }
+  if(!isVirtualFrom) vols[fk] = parseFloat((fromCur-vol).toFixed(3));
+  vols[tk] = parseFloat(toNew.toFixed(3));
+  if(SLUDGE_KEYS.includes(fk)||SLUDGE_KEYS.includes(tk)) updateTotalSludge(date);
+  const op = {
+    id: Date.now(),
+    type:'transfer',
+    date,
+    time: new Date().toTimeString().slice(0,5),
+    from: fk,
+    to: tk,
+    vol,
+    fromBefore: isVirtualFrom ? null : fromCur,
+    fromAfter: isVirtualFrom ? null : vols[fk],
+    toBefore: toCur,
+    toAfter: vols[tk],
+    notes
+  };
+  DB.operations.push(op);
+  saveDB();
+  saveAllSoundingsToSupabase(date);
+  saveOperationToSupabase(op);
+  loadSoundingToUI(date);
+  document.getElementById('tr-vol').value='';
+  document.getElementById('tr-notes').value='';
+  updateTrLevels();
+  renderOpsLog();
+  showToast(`✅ Transfer ${vol.toFixed(3)} m³: ${fromTank.l} → ${toTank.l}`,'success');
+}
+
+function renderOpsLog(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const todayOps = DB.operations.filter(op=>op.date===date && op.type==='transfer');
+  const badge = document.getElementById('ops-count-badge');
+  if(badge) badge.textContent = todayOps.length+' ops';
+  const cont = document.getElementById('ops-log-container');
+  if(!cont) return;
+  if(!todayOps.length){
+    cont.innerHTML='<div class="empty"><p>No operations recorded today</p></div>';
+    return;
+  }
+  const items = todayOps.slice().reverse().map(op => {
+    const ft = getTankDef(op.from);
+    const tt = getTankDef(op.to);
+    const title = `Transfer: ${ft?ft.l:op.from} → ${tt?tt.l:op.to}`;
+    let detail = `Volume: ${op.vol.toFixed(3)} m³`;
+    if(op.fromBefore!=null) detail += ` | Before: ${op.fromBefore.toFixed(3)} → After: ${op.fromAfter.toFixed(3)} m³ (from tank)`;
+    if(op.notes) detail += ` | Note: ${op.notes}`;
+    return `<div class="op-item">
+      <div class="op-icon" style="background:var(--blue-bg)">🔄</div>
+      <div class="op-body">
+        <div class="op-title">${title}</div>
+        <div class="op-detail">${detail}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="op-time">${op.time}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm op-del" onclick="editOp(${op.id})" title="Edit">✏</button>
+          <button class="btn btn-ghost btn-sm op-del" onclick="deleteOp(${op.id})" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  cont.innerHTML='<div class="ops-log">'+items+'</div>';
+}
+
+// ═══════════════════════════════════════════
+// GENERIC EDIT / DELETE FOR OPERATIONS
+// ═══════════════════════════════════════════
+
+let editingOpId = null;
+
+function editOp(id){
+  const op = DB.operations.find(o=>o.id===id);
+  if(!op) return;
+  editingOpId = id;
+  const body = document.getElementById('editOpBody');
+  let fields = `<div class="form-group"><label class="form-label">Volume (m³)</label><input type="number" class="form-input" id="edit-vol" value="${op.vol}" step="0.01" min="0"></div>`;
+  if(op.type==='ows'){
+    fields += `<div class="form-group"><label class="form-label">Position start</label><input class="form-input" id="edit-pos-start" value="${op.posStart||''}"></div>`;
+    fields += `<div class="form-group"><label class="form-label">Position end</label><input class="form-input" id="edit-pos-end" value="${op.posEnd||''}"></div>`;
+    fields += `<div class="form-group"><label class="form-label">Speed (kn)</label><input type="number" class="form-input" id="edit-speed" value="${op.speed||''}"></div>`;
+  }
+  if(op.type==='prf'){
+    fields += `<div class="form-group"><label class="form-label">Port</label><input class="form-input" id="edit-port" value="${op.port||''}"></div>`;
+    fields += `<div class="form-group"><label class="form-label">Contractor</label><input class="form-input" id="edit-contractor" value="${op.contractor||''}"></div>`;
+    fields += `<div class="form-group"><label class="form-label">Receipt</label><input class="form-input" id="edit-receipt" value="${op.receipt||''}"></div>`;
+  }
+  fields += `<div class="form-group"><label class="form-label">Notes</label><textarea class="transfer-notes" id="edit-notes">${op.notes||''}</textarea></div>`;
+  fields += `<div class="alert alert-warn"><span>⚠</span><span>Editing volume will NOT automatically re-adjust tank levels. Verify sounding manually after saving if needed.</span></div>`;
+  body.innerHTML = fields;
+  document.getElementById('editOpModal').classList.add('open');
+}
+
+function saveEditOp(){
+  const op = DB.operations.find(o=>o.id===editingOpId);
+  if(!op) return;
+  op.vol = parseFloat(document.getElementById('edit-vol').value)||op.vol;
+  const notesEl = document.getElementById('edit-notes');
+  if(notesEl) op.notes = notesEl.value.trim();
+  const ps = document.getElementById('edit-pos-start'); if(ps) op.posStart = ps.value.trim();
+  const pe = document.getElementById('edit-pos-end'); if(pe) op.posEnd = pe.value.trim();
+  const sp = document.getElementById('edit-speed'); if(sp) op.speed = sp.value.trim();
+  const pt = document.getElementById('edit-port'); if(pt) op.port = pt.value.trim();
+  const ct = document.getElementById('edit-contractor'); if(ct) op.contractor = ct.value.trim();
+  const rc = document.getElementById('edit-receipt'); if(rc) op.receipt = rc.value.trim();
+  saveDB();
+  saveOperationToSupabase(op);
+  closeModal('editOpModal');
+  renderOpsLog();
+  renderEvapLog();
+  renderDischargeLog();
+  showToast('✅ Record updated','success');
+}
+
+function deleteOp(id){
+  if(!confirm('Delete this operation? Tank volumes will NOT be restored automatically.')) return;
+  DB.operations = DB.operations.filter(op=>op.id!==id);
+  saveDB();
+  deleteOperationFromSupabase(id);
+  renderOpsLog();
+  renderEvapLog();
+  renderDischargeLog();
+  showToast('Operation deleted','info');
+}
+
+// ═══════════════════════════════════════════
+// EVAPORATION
+// ═══════════════════════════════════════════
+
+let currentReturnCycle = null;
+
+function updateEvapTankStatus(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const key = document.getElementById('ev-to-tank').value;
+  const vols = DB.soundings[date]||{};
+  const cur = vols[key]||0;
+  const tank = TANKS.find(t=>t.k===key);
+  const hasCycle = DB.evapCycles.find(c=>c.status==='pending'&&c.toTank===key);
+  const el = document.getElementById('ev-wot-status');
+  if(!el) return;
+  const pct = tank.cap>0?(cur/tank.cap*100).toFixed(1):0;
+  const col = parseFloat(pct)>=80?'var(--red)':parseFloat(pct)>=20?'var(--orange)':'var(--text-muted)';
+  el.innerHTML = `<span style="color:var(--text-muted)">${tank.l} current volume:</span> <strong style="color:${col}">${cur.toFixed(3)} m³</strong> / ${tank.cap} m³ (${pct}%)${hasCycle?'<br><span style="color:var(--purple);font-size:11px">⚠ Active evaporation cycle already running for this tank</span>':''}`;
+}
+
+function startEvaporation(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const toTankKey = document.getElementById('ev-to-tank').value;
+  const notes = document.getElementById('ev-notes').value.trim();
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  const toTank = TANKS.find(t=>t.k===toTankKey);
+  const toCur = vols[toTankKey]||0;
+  if(toCur<=0){ showToast(`${toTank.l} is empty — transfer sludge first via Transfer tab`,'error'); return; }
+  const alreadyActive = DB.evapCycles.find(c=>c.status==='pending'&&c.toTank===toTankKey);
+  if(alreadyActive){ showToast(`Active cycle already running for ${toTank.l}`,'error'); return; }
+  const cycle = {
+    id: Date.now(),
+    startDate: date,
+    startTime: new Date().toTimeString().slice(0,5),
+    toTank: toTankKey,
+    vol: toCur,
+    status:'pending',
+    notes,
+    dailyUpdates:[]
+  };
+  DB.evapCycles.push(cycle);
+  const op = { id:Date.now()+1, type:'evap_start', date, time:cycle.startTime, from:'BILGE_SLG', to:toTankKey, vol:toCur, notes };
+  DB.operations.push(op);
+  saveDB();
+  saveEvapCycleToSupabase(cycle);
+  saveOperationToSupabase(op);
+  document.getElementById('ev-notes').value='';
+  renderEvapLog();
+  renderPendingEvap();
+  renderOpsLog();
+  showToast(`🔥 Evaporation cycle started: ${toTank.l} — ${toCur.toFixed(3)} m³`,'success');
+}
+
+function updateEvapVolume(cycleId){
+  const cycle = DB.evapCycles.find(c=>c.id===cycleId);
+  if(!cycle) return;
+  const input = document.getElementById('evup-'+cycleId);
+  if(!input) return;
+  const newVol = parseFloat(input.value);
+  if(isNaN(newVol)||newVol<0){ showToast('Enter valid volume (can be 0)','error'); return; }
+  if(newVol>cycle.vol){ showToast('Updated volume cannot exceed original cycle volume','error'); return; }
+  const date = document.getElementById('soundingDate').value || todayStr();
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  vols[cycle.toTank] = parseFloat(newVol.toFixed(3));
+  updateTotalSludge(date);
+  cycle.dailyUpdates = cycle.dailyUpdates||[];
+  cycle.dailyUpdates.push({date, vol:newVol, time:new Date().toTimeString().slice(0,5)});
+  const op = {id:Date.now(),type:'evap_update',date,time:new Date().toTimeString().slice(0,5),
+    tankKey:cycle.toTank, cycleId:cycle.id, vol:newVol, notes:`Daily update for evap cycle`};
+  DB.operations.push(op);
+  saveDB();
+  saveEvapCycleToSupabase(cycle);
+  saveOperationToSupabase(op);
+  saveAllSoundingsToSupabase(date);
+  loadSoundingToUI(date);
+  input.value='';
+  renderEvapLog();
+  renderPendingEvap();
+  renderOpsLog();
+  const tank = TANKS.find(t=>t.k===cycle.toTank);
+  showToast(`📊 ${tank?tank.l:cycle.toTank} updated: ${newVol.toFixed(3)} m³`,'success');
+}
+
+// Active cycles are shown regardless of selected date — they persist until returned
+function renderPendingEvap(){
+  const pending = DB.evapCycles.filter(c=>c.status==='pending');
+  const el = document.getElementById('pending-evap-list');
+  if(!el) return;
+  if(!pending.length){
+    el.innerHTML='<div class="empty"><p>No active evaporation cycles.<br><span style=\'font-size:11px\'>Transfer sludge to WOT 1 or WOT 2 first, then start a cycle here.</span></p></div>';
+    return;
+  }
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const getTankFn = t => TANKS.find(x=>x.k===t);
+  el.innerHTML = pending.map(c=>{
+    const tk = getTankFn(c.toTank);
+    const vols = DB.soundings[date]||{};
+    const curVol = vols[c.toTank]!==undefined ? vols[c.toTank] : c.vol;
+    const evap = Math.max(0,c.vol-curVol);
+    const pct = c.vol>0?(evap/c.vol*100).toFixed(1):0;
+    const lastUpdate = (c.dailyUpdates&&c.dailyUpdates.length)?c.dailyUpdates[c.dailyUpdates.length-1]:'';
+    return `<div class="pending-evap-item" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div>
+          <div class="pending-evap-title">🔥 ${tk?tk.l:c.toTank} — cycle started ${c.startDate} ${c.startTime}</div>
+          <div class="pending-evap-detail">Original volume: ${c.vol.toFixed(3)} m³ | Current: <strong style="color:var(--orange)">${curVol.toFixed(3)} m³</strong> | Evaporated so far: <strong style="color:var(--primary)">${evap.toFixed(3)} m³ (${pct}%)</strong></div>
+          ${lastUpdate?`<div class="pending-evap-detail" style="color:var(--text-faint)">Last update: ${lastUpdate.date} ${lastUpdate.time} → ${lastUpdate.vol.toFixed(3)} m³</div>`:''}
+          ${c.notes?`<div class="pending-evap-detail" style="color:var(--text-muted)">${c.notes}</div>`:''}
+        </div>
+        <button class="btn btn-purple btn-sm" onclick="openReturnModal(${c.id})" style="white-space:nowrap;flex-shrink:0">↩ Return</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="evup-${c.id}" class="form-input" style="flex:1;font-size:12px;height:34px" placeholder="Current volume in ${tk?tk.l:c.toTank} (m³)" step="0.01" min="0">
+        <button class="btn btn-outline btn-sm" onclick="updateEvapVolume(${c.id})" style="white-space:nowrap">📊 Update Volume</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openReturnModal(cycleId){
+  const cycle = DB.evapCycles.find(c=>c.id===cycleId);
+  if(!cycle) return;
+  currentReturnCycle = cycle;
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const vols = DB.soundings[date]||{};
+  const curVol = vols[cycle.toTank]!==undefined ? vols[cycle.toTank] : cycle.vol;
+  const tank = TANKS.find(t=>t.k===cycle.toTank);
+  document.getElementById('ret-tank-name').value = (tank?tank.l:cycle.toTank)+' → BILGE SLUDGE';
+  document.getElementById('ret-orig-vol').value = cycle.vol.toFixed(3)+' m³';
+  document.getElementById('ret-vol').value = curVol.toFixed(3);
+  document.getElementById('ret-notes').value='';
+  document.getElementById('returnModal').classList.add('open');
+}
+
+function confirmReturn(){
+  if(!currentReturnCycle) return;
+  const cycle = currentReturnCycle;
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const retVol = parseFloat(document.getElementById('ret-vol').value);
+  const notes = document.getElementById('ret-notes').value.trim();
+  if(isNaN(retVol)||retVol<0){ showToast('Enter valid residue volume (can be 0)','error'); return; }
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  vols[cycle.toTank] = 0;
+  const bilgeCur = vols['BILGE_SLG']||0;
+  vols['BILGE_SLG'] = parseFloat((bilgeCur+retVol).toFixed(3));
+  updateTotalSludge(date);
+  cycle.status='completed';
+  cycle.returnDate=date;
+  cycle.returnVol=retVol;
+  cycle.evaporated=parseFloat((cycle.vol-retVol).toFixed(3));
+  const op = { id:Date.now(), type:'evap_return', date, time:new Date().toTimeString().slice(0,5),
+    from:cycle.toTank, to:'BILGE_SLG', vol:retVol, origVol:cycle.vol, cycleId:cycle.id, notes };
+  DB.operations.push(op);
+  saveDB();
+  saveEvapCycleToSupabase(cycle);
+  saveOperationToSupabase(op);
+  saveAllSoundingsToSupabase(date);
+  loadSoundingToUI(date);
+  renderEvapLog();
+  renderPendingEvap();
+  renderOpsLog();
+  closeModal('returnModal');
+  currentReturnCycle = null;
+  showToast(`↩ Returned to BILGE SLUDGE: ${retVol.toFixed(3)} m³ | Total evaporated: ${cycle.evaporated.toFixed(3)} m³`,'success');
+}
+
+// Evaporation log shows ALL history regardless of selected date, always persisted
+function renderEvapLog(){
+  const evapOps = DB.operations.filter(op=>op.type==='evap_start'||op.type==='evap_return'||op.type==='evap_update');
+  const el = document.getElementById('evap-log-container');
+  if(!el) return;
+  if(!evapOps.length){
+    el.innerHTML='<div class="empty"><p>No evaporation operations recorded</p></div>';
+    return;
+  }
+  const items = evapOps.slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time)).reverse().map(op=>{
+    const ft = TANKS.find(t=>t.k===op.from);
+    const tt = TANKS.find(t=>t.k===op.to);
+    const icon = op.type==='evap_start'?'🔥':op.type==='evap_update'?'📊':'↩';
+    const bg = op.type==='evap_start'?'var(--orange-bg)':op.type==='evap_update'?'var(--surface-2)':'var(--purple-bg)';
+    let title='', detail='';
+    if(op.type==='evap_start'){
+      title=`Evaporation started: BILGE SLUDGE → ${tt?tt.l:op.to}`;
+      detail=`Volume: ${op.vol.toFixed(3)} m³`;
+    } else if(op.type==='evap_update'){
+      const utk = TANKS.find(t=>t.k===op.tankKey);
+      title=`Evap Update: ${utk?utk.l:op.tankKey} → ${op.vol.toFixed(3)} m³`;
+      detail=`Daily evaporation status update`;
+    } else {
+      title=`Residue returned: ${ft?ft.l:op.from} → BILGE SLUDGE`;
+      detail=`Original: ${(op.origVol||0).toFixed(3)} m³ | Returned: ${op.vol.toFixed(3)} m³ | Evaporated: ${((op.origVol||0)-op.vol).toFixed(3)} m³`;
+    }
+    if(op.notes) detail+=` | Note: ${op.notes}`;
+    return `<div class="op-item">
+      <div class="op-icon" style="background:${bg}">${icon}</div>
+      <div class="op-body">
+        <div class="op-title">${title}</div>
+        <div class="op-detail">${detail}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="op-time">${op.date} ${op.time}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm op-del" onclick="editOp(${op.id})" title="Edit">✏</button>
+          <button class="btn btn-ghost btn-sm op-del" onclick="deleteOp(${op.id})" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML='<div class="ops-log">'+items+'</div>';
+}
+
+// ═══════════════════════════════════════════
+// OWS — OVERBOARD DISCHARGE
+// ═══════════════════════════════════════════
+
+function updateDischargeLevels(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const vols = DB.soundings[date]||{};
+  const bilge = vols['BILGE']||0;
+  const sludge = vols['BILGE_SLG']||0;
+  const owsEl = document.getElementById('ows-bilge-level');
+  const prfEl = document.getElementById('prf-sludge-level');
+  if(owsEl) owsEl.textContent = 'BILGE current: '+bilge.toFixed(3)+' m³ / 71.46 m³';
+  if(prfEl) prfEl.textContent = 'BILGE SLUDGE current: '+sludge.toFixed(3)+' m³ / 117.66 m³';
+}
+
+function doOWS(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const vol = parseFloat(document.getElementById('ows-vol').value)||0;
+  const posStart = document.getElementById('ows-pos-start').value.trim();
+  const posEnd = document.getElementById('ows-pos-end').value.trim();
+  const speed = document.getElementById('ows-speed').value.trim();
+  const notes = document.getElementById('ows-notes').value.trim();
+  if(vol<=0){ showToast('Enter valid discharge volume','error'); return; }
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  const bilgeCur = vols['BILGE']||0;
+  if(vol>bilgeCur){ showToast('Not enough volume in BILGE tank (current: '+bilgeCur.toFixed(3)+' m³)','error'); return; }
+  vols['BILGE'] = parseFloat((bilgeCur-vol).toFixed(3));
+  const op = {
+    id: Date.now(), type: 'ows', date, time: new Date().toTimeString().slice(0,5),
+    vol, bilgeBefore: bilgeCur, bilgeAfter: vols['BILGE'], posStart, posEnd, speed, notes
+  };
+  DB.operations.push(op);
+  saveDB();
+  saveAllSoundingsToSupabase(date);
+  saveOperationToSupabase(op);
+  loadSoundingToUI(date);
+  document.getElementById('ows-vol').value='';
+  document.getElementById('ows-pos-start').value='';
+  document.getElementById('ows-pos-end').value='';
+  document.getElementById('ows-speed').value='';
+  document.getElementById('ows-notes').value='';
+  updateDischargeLevels();
+  renderDischargeLog();
+  renderOpsLog();
+  showToast('🌊 OWS discharge recorded: '+vol.toFixed(3)+' m³','success');
+}
+
+// ═══════════════════════════════════════════
+// PORT RECEPTION FACILITY
+// ═══════════════════════════════════════════
+
+function doPRF(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const vol = parseFloat(document.getElementById('prf-vol').value)||0;
+  const port = document.getElementById('prf-port').value.trim();
+  const method = document.getElementById('prf-method').value;
+  const contractor = document.getElementById('prf-contractor').value.trim();
+  const receipt = document.getElementById('prf-receipt').value.trim();
+  const notes = document.getElementById('prf-notes').value.trim();
+  if(vol<=0){ showToast('Enter valid delivery volume','error'); return; }
+  if(!port){ showToast('Enter port name','error'); return; }
+  if(!DB.soundings[date]) DB.soundings[date]={};
+  const vols = DB.soundings[date];
+  const sludgeCur = vols['BILGE_SLG']||0;
+  if(vol>sludgeCur){ showToast('Not enough volume in BILGE SLUDGE (current: '+sludgeCur.toFixed(3)+' m³)','error'); return; }
+  vols['BILGE_SLG'] = parseFloat((sludgeCur-vol).toFixed(3));
+  updateTotalSludge(date);
+  const op = {
+    id: Date.now(), type: 'prf', date, time: new Date().toTimeString().slice(0,5),
+    vol, sludgeBefore: sludgeCur, sludgeAfter: vols['BILGE_SLG'], port, method, contractor, receipt, notes
+  };
+  DB.operations.push(op);
+  saveDB();
+  saveAllSoundingsToSupabase(date);
+  saveOperationToSupabase(op);
+  loadSoundingToUI(date);
+  document.getElementById('prf-vol').value='';
+  document.getElementById('prf-port').value='';
+  document.getElementById('prf-contractor').value='';
+  document.getElementById('prf-receipt').value='';
+  document.getElementById('prf-notes').value='';
+  updateDischargeLevels();
+  renderDischargeLog();
+  renderOpsLog();
+  showToast('🚢 Port delivery recorded: '+vol.toFixed(3)+' m³ at '+port,'success');
+}
+
+// Discharge log shows ALL persisted records, split into TODAY vs PREVIOUS by selected date
+function renderDischargeLog(){
+  const date = document.getElementById('soundingDate').value || todayStr();
+  const allOps = DB.operations.filter(op=>op.type==='ows'||op.type==='prf');
+  const badge = document.getElementById('discharge-count-badge');
+  if(badge) badge.textContent = allOps.length+' records';
+  const cont = document.getElementById('discharge-log-container');
+  if(!cont) return;
+  const todayDischarge = allOps.filter(op=>op.date===date);
+  const otherDischarge = allOps.filter(op=>op.date!==date).slice(-20).reverse();
+  if(!allOps.length){
+    cont.innerHTML='<div class="empty"><p>No discharge or delivery operations recorded</p></div>';
+    return;
+  }
+  const renderOp = op => {
+    const safe = v => (v === undefined || v === null || isNaN(Number(v))) ? '—' : Number(v).toFixed(3);
+
+    if(op.type==='ows'){
+      return `<div class="op-item">
+        <div class="op-icon" style="background:var(--blue-bg)">🌊</div>
+        <div class="op-body">
+          <div class="op-title">OWS Overboard Discharge — ${safe(op.vol)} m³</div>
+          <div class="op-detail">BILGE: ${safe(op.bilgeBefore)} → ${safe(op.bilgeAfter)} m³${op.posStart?' | Start: '+op.posStart:''}${op.posEnd?' | End: '+op.posEnd:''}${op.speed?' | Speed: '+op.speed+' kn':''}${op.notes?' | '+op.notes:''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="op-time">${op.date || ''} ${op.time || ''}</span>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm op-del" onclick="editOp(${op.id})" title="Edit">✏</button>
+            <button class="btn btn-ghost btn-sm op-del" onclick="deleteOp(${op.id})" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    return `<div class="op-item">
+      <div class="op-icon" style="background:var(--orange-bg)">🚢</div>
+      <div class="op-body">
+        <div class="op-title">Port Reception (${op.method || '—'}) — ${safe(op.vol)} m³</div>
+        <div class="op-detail">Port: ${op.port || '—'} | BILGE SLUDGE: ${safe(op.sludgeBefore)} → ${safe(op.sludgeAfter)} m³${op.contractor?' | '+op.contractor:''}${op.receipt?' | Receipt: '+op.receipt:''}${op.notes?' | '+op.notes:''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="op-time">${op.date || ''} ${op.time || ''}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm op-del" onclick="editOp(${op.id})" title="Edit">✏</button>
+          <button class="btn btn-ghost btn-sm op-del" onclick="deleteOp(${op.id})" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }
+};
+  let html = '';
+  if(todayDischarge.length){
+    html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:8px">SELECTED DATE</div>';
+    html += '<div class="ops-log" style="margin-bottom:16px">'+todayDischarge.slice().reverse().map(renderOp).join('')+'</div>';
+  }
+  if(otherDischarge.length){
+    html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">OTHER DAYS</div>';
+    html += '<div class="ops-log">'+otherDischarge.map(renderOp).join('')+'</div>';
+  }
+  cont.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION & UTILS
+// ═══════════════════════════════════════════
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(id==='transfer'){
+    updateTrLevels();
+    renderOpsLog();
+  }
+  if(id==='evaporation'){
+    renderPendingEvap();
+    renderEvapLog();
+    updateTrLevels();
+    updateEvapTankStatus();
+  }
+  if(id==='discharge'){
+    updateDischargeLevels();
+    renderDischargeLog();
+  }
+  if(id==='history'){
+    const month = document.getElementById('histMonth').value;
+    renderHistory();
+  }
+  if(id==='report'){
+    const d = document.getElementById('soundingDate').value || todayStr();
+    document.getElementById('rptDate').value = d;
+  }
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme');
+  const next = cur==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  document.querySelector('.theme-toggle').textContent = next==='dark'?'☀':'🌙';
+}
+
+function showToast(msg, type='info'){
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  const icon = type==='success'?'✅':type==='error'?'❌':'ℹ️';
+  t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(()=>{
+    t.classList.add('out');
+    setTimeout(()=>t.remove(),220);
+  },3500);
+}
+
+// ═══════════════════════════════════════════
+// HISTORY & REPORT (basic implementations)
+// ═══════════════════════════════════════════
+
+function renderHistory(){
+  const month = document.getElementById('histMonth').value;
+  if(!month) return;
+  const dates = Object.keys(DB.soundings).filter(d=>d.startsWith(month)).sort();
+  const cnt = document.getElementById('hist-count');
+  if(cnt) cnt.textContent = dates.length+' records';
+  const thead = document.getElementById('hist-thead');
+  const tbody = document.getElementById('hist-tbody');
+  if(!thead||!tbody) return;
+  const cols = TANKS.filter(t=>!t.readonly);
+  thead.innerHTML = '<tr><th class="date-col">Date</th>'+cols.map(c=>`<th>${c.l}</th>`).join('')+'</tr>';
+  tbody.innerHTML = dates.map(d=>{
+    const vols = DB.soundings[d]||{};
+    return '<tr><td class="date-col">'+d+'</td>'+cols.map(c=>`<td>${(vols[c.k]!=null?vols[c.k].toFixed(2):'—')}</td>`).join('')+'</tr>';
+  }).join('') || '<tr><td colspan="'+(cols.length+1)+'" style="text-align:center;color:var(--text-faint);padding:24px">No data for this month</td></tr>';
+
+  const opsCont = document.getElementById('hist-ops-container');
+  if(opsCont){
+    const ops = DB.operations.filter(o=>o.date && o.date.startsWith(month)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).reverse();
+    if(!ops.length){ opsCont.innerHTML = '<div class="empty"><p>No operations this month</p></div>'; }
+    else {
+      opsCont.innerHTML = '<div class="ops-log">'+ops.map(op=>`<div class="op-item"><div class="op-body"><div class="op-title">${op.type.toUpperCase()} — ${(op.vol||0).toFixed(3)} m³</div><div class="op-detail">${op.notes||''}</div></div><span class="op-time">${op.date} ${op.time}</span></div>`).join('')+'</div>';
+    }
+  }
+}
+
+function exportHistoryCSV(){
+  const month = document.getElementById('histMonth').value;
+  const dates = Object.keys(DB.soundings).filter(d=>d.startsWith(month)).sort();
+  const cols = TANKS.filter(t=>!t.readonly);
+  let csv = 'Date,'+cols.map(c=>c.l).join(',')+'\n';
+  dates.forEach(d=>{
+    const vols = DB.soundings[d]||{};
+    csv += d+','+cols.map(c=>(vols[c.k]!=null?vols[c.k]:'')).join(',')+'\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  downloadBlob(blob, `history-${month}.csv`);
+  showToast('✅ CSV exported','success');
+}
+
+function toggleRptMode(){
+  const mode = document.getElementById('rptMode').value;
+  document.getElementById('rpt-hint').textContent = mode==='single' ? 'Single day sounding report' : 'All days tank dynamics report';
+  document.getElementById('rptDate').style.display = mode==='single' ? '' : 'none';
+}
+
+function generateReport(){
+  const mode = document.getElementById('rptMode').value;
+  const cont = document.getElementById('report-content');
+  if(mode==='single'){
+    const date = document.getElementById('rptDate').value || todayStr();
+    const vols = DB.soundings[date]||{};
+    const rows = TANKS.filter(t=>!t.readonly).map(t=>`<tr><td class="date-col">${t.l}</td><td>${(vols[t.k]!=null?vols[t.k].toFixed(3):'—')}</td><td>${t.cap}</td></tr>`).join('');
+    cont.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">📄 Sounding Report — ${date}</div></div><div class="card-body" style="padding:0"><div class="hist-table-wrap"><table class="hist-table"><thead><tr><th>Tank</th><th>Volume (m³)</th><th>Capacity (m³)</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  } else {
+    renderHistory();
+    const dates = Object.keys(DB.soundings).sort();
+    cont.innerHTML = `<div class="alert alert-info"><span>ℹ</span><span>Showing tank dynamics across ${dates.length} recorded days. Use History tab for full detail and CSV export.</span></div>`;
+  }
+}
+
+function printReport(){ window.print(); }
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+async function init(){
+  const today = todayStr();
+  document.getElementById('soundingDate').value = today;
+  document.getElementById('histMonth').value = today.slice(0,7);
+  document.getElementById('rptDate').value = today;
+
+  try{ const c = JSON.parse(localStorage.getItem('dsProDB')); if(c) Object.assign(DB,c); }catch(e){}
+
+  buildGrids();
+  loadSoundingToUI(today);
+  buildTransferSelects();
+  renderPendingEvap();
+  renderEvapLog();
+
+  const st = document.getElementById('soundingStatus');
+  st.textContent='☁️ Loading from cloud...';
+  st.className='status-badge badge-blue';
+
+  await loadAllOperationsFromSupabase();
+  await loadDateFromSupabase(today);
+  loadSoundingToUI(today);
+  renderOpsLog();
+  renderPendingEvap();
+  renderEvapLog();
+  renderDischargeLog();
+
+  if(DB.soundings[today] && Object.keys(DB.soundings[today]).length > 0){
+    st.textContent='☁️ Data loaded from cloud';
+    st.className='status-badge badge-green';
+  } else {
+    st.textContent='08:00 — fill morning sounding';
+    st.className='status-badge badge-orange';
+  }
+
+  document.getElementById('soundingDate').addEventListener('change', async e=>{
+    const date = e.target.value;
+    const st2 = document.getElementById('soundingStatus');
+    st2.textContent='☁️ Loading...';
+    st2.className='status-badge badge-blue';
+    await loadDateFromSupabase(date);
+    loadSoundingToUI(date);
+    renderOpsLog();
+    renderPendingEvap();
+    renderEvapLog();
+    renderDischargeLog();
+    if(DB.soundings[date] && Object.keys(DB.soundings[date]).length > 0){
+      st2.textContent='☁️ Data loaded';
+      st2.className='status-badge badge-green';
+    } else {
+      st2.textContent='No data — fill in';
+      st2.className='status-badge badge-orange';
+    }
+  });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
